@@ -5,6 +5,7 @@ import * as dotenv from "dotenv";
 import prisma from "./lib/prisma.js";
 import authRoutes from "./routes/auth.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
+import fixedExpenseRoutes from "./routes/fixedExpense.routes.js";
 
 dotenv.config();
 
@@ -16,7 +17,8 @@ app.use(express.json());
 
 // Menggunakan route yang sudah dipisahkan
 app.use("/api/auth", authRoutes);
-app.use("/api/transactions", transactionRoutes); // Tambahkan ini
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/fixed-expenses", fixedExpenseRoutes);
 
 app.get("/", (_req, res) => {
   res.send("BudgetBuddy API is running... 🚀");
