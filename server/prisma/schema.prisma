@@ -1,0 +1,47 @@
+// budget-buddy/server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  dailyLimit    Float          @default(0) // Jatah jajan per hari
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relasi: User punya banyak log dan pengeluaran tetap
+  logs          DailyLog[]
+  fixedExpenses FixedExpense[]
+}
+
+model DailyLog {
+  id          String   @id @default(uuid())
+  description String
+  amount      Float
+  category    String   // makan, transport, hiburan, dll
+  date        DateTime @default(now())
+  
+  // Relasi ke User
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model FixedExpense {
+  id          String   @id @default(uuid())
+  name        String   // Cicilan, Kos, Netflix, dll
+  amount      Float
+  dueDate     Int      // Tanggal jatuh tempo (1-31)
+  
+  // Relasi ke User
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
