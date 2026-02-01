@@ -41,6 +41,7 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
+
     if (!user) {
       return res
         .status(401)
@@ -63,7 +64,13 @@ export const login = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "Login berhasil! 🔑",
       token,
-      user: { id: user.id, name: user.name, email: user.email },
+      // Sertakan dailyLimit saat login agar frontend langsung sinkron [cite: 2026-01-14]
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        dailyLimit: user.dailyLimit,
+      },
     });
   } catch (error) {
     console.error("Login Error:", error);
@@ -75,7 +82,13 @@ export const getMe = async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      select: { id: true, name: true, email: true },
+      // Menambahkan dailyLimit ke dalam select agar dikirim ke frontend [cite: 2026-01-14]
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        dailyLimit: true,
+      },
     });
 
     if (!user) {
@@ -86,5 +99,24 @@ export const getMe = async (req: any, res: Response) => {
   } catch (error) {
     console.error("Get Me Error:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateLimit = async (req: any, res: Response) => {
+  try {
+    const { dailyLimit } = req.body;
+    // Update data berdasarkan userId dari token
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { dailyLimit: parseFloat(dailyLimit) },
+    });
+
+    res.status(200).json({
+      message: "Limit harian diperbarui! 🎯",
+      dailyLimit: updatedUser.dailyLimit,
+    });
+  } catch (error) {
+    console.error("Update Limit Error:", error);
+    res.status(500).json({ message: "Gagal update limit" });
   }
 };

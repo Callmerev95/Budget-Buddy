@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { register, login, getMe } from "../controllers/auth.controller.js";
+import {
+  register,
+  login,
+  getMe,
+  updateLimit,
+} from "../controllers/auth.controller.js";
 import { authenticateToken } from "../lib/auth.js";
 
 const router = Router();
@@ -7,5 +12,6 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 router.get("/me", authenticateToken, getMe);
+router.patch("/limit", authenticateToken, updateLimit);
 
 export default router;
