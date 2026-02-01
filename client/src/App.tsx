@@ -3,6 +3,7 @@ import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './lib/ProtectedRoute';
+import Reports from './pages/Reports';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           {/* Route yang diproteksi */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" />} />

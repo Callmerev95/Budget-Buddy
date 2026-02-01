@@ -134,8 +134,8 @@ const Dashboard = () => {
         {/* Alert Estimasi Saldo Bulanan [cite: 2026-01-14] */}
         {totalFixed > 0 && (
           <div className={`mt-4 p-4 rounded-2xl flex items-center gap-3 border transition-colors duration-300 ${monthlyBudgetFree < 0
-              ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             }`}>
             <AlertCircle size={20} />
             <div className="text-xs">
@@ -193,11 +193,17 @@ const Dashboard = () => {
       />
 
       {/* Navigation Bar */}
+      {/* Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-900 px-8 py-4 flex justify-between items-center z-50">
-        <button className="flex flex-col items-center text-emerald-500">
+        {/* Tambahkan onClick ke Dashboard agar konsisten */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex flex-col items-center text-emerald-500"
+        >
           <Home size={24} />
           <span className="text-[10px] font-bold mt-1 uppercase">Home</span>
         </button>
+
         <div className="relative -mt-14">
           <button
             onClick={() => setIsModalOpen(true)}
@@ -206,7 +212,12 @@ const Dashboard = () => {
             <Plus size={28} />
           </button>
         </div>
-        <button className="flex flex-col items-center text-zinc-600">
+
+        {/* INI YANG PERLU DIPERBAIKI: Tambahkan onClick={() => navigate('/reports')} */}
+        <button
+          onClick={() => navigate('/reports')}
+          className="flex flex-col items-center text-zinc-600 active:text-emerald-500 transition-colors"
+        >
           <PieChart size={24} />
           <span className="text-[10px] font-bold mt-1 uppercase">Laporan</span>
         </button>
