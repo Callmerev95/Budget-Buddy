@@ -1,31 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, LogOut, TrendingUp, TrendingDown, X } from 'lucide-react';
+import { Home, PieChart, Plus, LogOut, TrendingUp, TrendingDown, X, Utensils, Car, ShoppingBag, Gamepad2, Layers } from 'lucide-react';
 import api from '../lib/api';
 
 const Dashboard = () => {
   const [userName, setUserName] = useState('');
+  const [transactions, setTransactions] = useState<any[]>([]); // State data transaksi
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // State untuk Form sesuai Schema DailyLog
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
     category: 'Makan & Minum'
   });
 
+  // Fungsi ambil data transaksi dari backend
+  const fetchTransactions = async () => {
+    try {
+      const res = await api.get('/transactions');
+      setTransactions(res.data);
+    } catch (err) {
+      console.error("Gagal ambil transaksi");
+    }
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/auth/me');
-        setUserName(res.data.name);
+        const userRes = await api.get('/auth/me');
+        setUserName(userRes.data.name);
+        await fetchTransactions();
       } catch (err) {
         console.error("Gagal ambil data user");
       }
     };
-    fetchUser();
+    fetchData();
   }, []);
 
   const handleLogout = () => {
@@ -40,14 +51,27 @@ const Dashboard = () => {
       await api.post('/transactions', formData);
       setIsModalOpen(false);
       setFormData({ description: '', amount: '', category: 'Makan & Minum' });
-      alert("Catatan berhasil disimpan! 💸");
-      // TODO: Refresh data transaksi di sini nanti
+      await fetchTransactions(); // Refresh data setelah input
     } catch (err) {
       alert("Gagal menyimpan catatan");
     } finally {
       setLoading(false);
     }
   };
+
+  // Helper Icon Kategori
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Makan & Minum': return <Utensils size={18} />;
+      case 'Transportasi': return <Car size={18} />;
+      case 'Belanja': return <ShoppingBag size={18} />;
+      case 'Hiburan': return <Gamepad2 size={18} />;
+      default: return <Layers size={18} />;
+    }
+  };
+
+  // Kalkulasi Total (Berdasarkan DailyLog)
+  const totalSpent = transactions.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pb-28">
@@ -71,8 +95,10 @@ const Dashboard = () => {
         {/* Main Balance Card - Glassmorphism style */}
         <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-800 p-7 rounded-[2rem] shadow-2xl shadow-emerald-900/20 mb-8">
           <div className="relative z-10">
-            <p className="text-emerald-100/80 text-sm font-medium mb-1">Total Saldo Kamu</p>
-            <h2 className="text-4xl font-extrabold tracking-tight">Rp 0</h2>
+            <p className="text-emerald-100/80 text-sm font-medium mb-1">Total Pengeluaran</p>
+            <h2 className="text-4xl font-extrabold tracking-tight">
+              Rp {totalSpent.toLocaleString('id-ID')}
+            </h2>
             <div className="mt-6 flex gap-4">
               <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
                 <div className="bg-emerald-400 p-1 rounded-full text-zinc-900">
@@ -84,7 +110,9 @@ const Dashboard = () => {
                 <div className="bg-rose-400 p-1 rounded-full text-zinc-900">
                   <TrendingDown size={12} />
                 </div>
-                <span className="text-xs font-bold text-rose-50">Rp 0</span>
+                <span className="text-xs font-bold text-rose-50">
+                  Rp {totalSpent.toLocaleString('id-ID')}
+                </span>
               </div>
             </div>
           </div>
@@ -106,17 +134,41 @@ const Dashboard = () => {
               <TrendingDown size={20} />
             </div>
             <p className="text-zinc-500 text-xs mb-1">Pengeluaran</p>
-            <p className="text-lg font-bold text-rose-400 leading-none">Rp 0</p>
+            <p className="text-lg font-bold text-rose-400 leading-none">
+              Rp {totalSpent.toLocaleString('id-ID')}
+            </p>
           </div>
         </div>
 
-        {/* Recent Transactions Placeholder */}
+        {/* Recent Transactions List */}
         <div className="flex justify-between items-center mb-4 px-1">
           <h3 className="text-lg font-bold">Transaksi Terakhir</h3>
           <button className="text-emerald-500 text-sm font-medium">Lihat Semua</button>
         </div>
-        <div className="bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl p-8 text-center">
-          <p className="text-zinc-600 text-sm">Belum ada catatan hari ini.</p>
+
+        <div className="space-y-3">
+          {transactions.length > 0 ? (
+            transactions.slice(0, 5).map((item) => (
+              <div key={item.id} className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl flex items-center justify-between animate-in fade-in duration-500">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 bg-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                    {getCategoryIcon(item.category)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{item.description}</p>
+                    <p className="text-[10px] text-zinc-500 uppercase font-medium">{item.category}</p>
+                  </div>
+                </div>
+                <p className="text-sm font-bold text-rose-400">
+                  - Rp {item.amount.toLocaleString('id-ID')}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl p-8 text-center">
+              <p className="text-zinc-600 text-sm">Belum ada catatan hari ini.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -181,7 +233,6 @@ const Dashboard = () => {
           <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Home</span>
         </button>
 
-        {/* Floating Action Button - Sekarang bisa buka Modal */}
         <div className="relative -mt-14">
           <button
             onClick={() => setIsModalOpen(true)}
