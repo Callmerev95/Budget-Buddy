@@ -7,7 +7,7 @@
 
     /* Output Settings */
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "..",
     "sourceMap": true,
     "declaration": true,
     "removeComments": true,
@@ -24,12 +24,20 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
+    /* Alias untuk Shared Folder (Tanpa baseUrl) */
+    "paths": {
+      "@shared/*": ["../shared/src/*"]
+    },
+
+    /* Membungkam warning deprecation TS 5.x/6.x */
+    "ignoreDeprecations": "5.0",
+
     /* Interop & Miscellaneous */
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../shared/src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
 }
