@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, PieChart, Plus, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion'; // Tambahkan ini
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { Header } from '../components/dashboard/Header';
@@ -21,7 +22,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // State untuk Smart Planner [cite: 2026-01-14]
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [userData, setUserData] = useState({
     monthlyIncome: 0,
@@ -38,22 +38,16 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [userRes, transRes] = await Promise.all([api.get('/auth/me'), api.get('/transactions')]);
-
       setUserName(userRes.data.name);
       setDailyLimit(Number(userRes.data.dailyLimit) || 0);
       setTransactions(transRes.data);
-
-      // Sinkronkan data financial plan dari database [cite: 2026-01-14]
       setUserData({
         monthlyIncome: userRes.data.monthlyIncome || 0,
         savingsTarget: userRes.data.savingsTarget || 0,
         isPercentTarget: userRes.data.isPercentTarget || false,
       });
-
-      try {
-        const fixedRes = await api.get('/fixed-expenses');
-        setFixedExpenses(fixedRes.data);
-      } catch (e) { console.warn("Fixed expenses error"); }
+      const fixedRes = await api.get('/fixed-expenses');
+      setFixedExpenses(fixedRes.data);
     } catch (err) { toast.error("Gagal fetch data"); }
   };
 
@@ -66,11 +60,7 @@ const Dashboard = () => {
       toast.success('Rencana keuangan diterapkan! 💰');
       setIsPlanModalOpen(false);
       await fetchData();
-    } catch (err) {
-      toast.error('Gagal menyimpan rencana');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { toast.error('Gagal menyimpan rencana'); } finally { setLoading(false); }
   };
 
   const handlePayFixedExpense = async (expense: any) => {
@@ -107,119 +97,93 @@ const Dashboard = () => {
     } catch (err) { toast.error('Gagal'); } finally { setLoading(false); }
   };
 
-  // LOGIKAL KALKULASI [cite: 2026-01-14]
   const totalSpent = transactions.reduce((acc, curr) => acc + curr.amount, 0);
   const totalFixed = fixedExpenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-
-  // Hitung nominal tabungan berdasarkan tipe (persen/nominal) [cite: 2026-01-14]
-  const savingsAmount = userData.isPercentTarget
-    ? (userData.monthlyIncome * userData.savingsTarget) / 100
-    : userData.savingsTarget;
-
-  // Rumus Anti-Panik: Gaji - Tabungan - Pengeluaran Terjadi - Total Tagihan [cite: 2026-01-14]
+  const savingsAmount = userData.isPercentTarget ? (userData.monthlyIncome * userData.savingsTarget) / 100 : userData.savingsTarget;
   const monthlyBudgetFree = userData.monthlyIncome - savingsAmount - totalSpent - totalFixed;
   const remainingLimit = dailyLimit - totalSpent;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pb-28">
-      <div className="p-6 pt-8">
+    <div className="min-h-screen bg-zinc-950 text-white pb-32">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 pt-8 max-w-md mx-auto"
+      >
         <Header userName={userName} onLogout={() => { localStorage.removeItem('token'); navigate('/login'); }} />
 
-        <BalanceCard
-          remainingLimit={remainingLimit}
-          usagePercentage={dailyLimit > 0 ? (totalSpent / dailyLimit) * 100 : 0}
-          dailyLimit={dailyLimit}
-        />
+        <div className="mt-6">
+          <BalanceCard
+            remainingLimit={remainingLimit}
+            usagePercentage={dailyLimit > 0 ? (totalSpent / dailyLimit) * 100 : 0}
+            dailyLimit={dailyLimit}
+          />
+        </div>
 
-        {/* Alert Estimasi Saldo Bulanan [cite: 2026-01-14] */}
-        {totalFixed > 0 && (
-          <div className={`mt-4 p-4 rounded-2xl flex items-center gap-3 border transition-colors duration-300 ${monthlyBudgetFree < 0
-            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-            }`}>
-            <AlertCircle size={20} />
-            <div className="text-xs">
-              <p className="font-bold uppercase tracking-wider opacity-60">Estimasi Sisa Saldo Bulan Ini</p>
-              <p className="text-sm font-bold mt-0.5">Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
+        <AnimatePresence>
+          {totalFixed > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`mt-6 p-4 rounded-[2rem] flex items-center gap-4 border backdrop-blur-md transition-all duration-500 ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                }`}
+            >
+              <div className={`p-2 rounded-xl ${monthlyBudgetFree < 0 ? 'bg-rose-500/20' : 'bg-emerald-500/20'}`}>
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] opacity-60">Estimasi Sisa Saldo</p>
+                <p className="text-base font-bold">Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="mt-10 space-y-8">
+          <section>
+            <div className="flex justify-between items-center mb-4 px-1">
+              <h3 className="text-xl font-black tracking-tight">Ringkasan</h3>
+              <button onClick={() => setIsPlanModalOpen(true)} className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-full">
+                Edit Limit
+              </button>
             </div>
-          </div>
-        )}
+            <SummaryGrid dailyLimit={dailyLimit} totalSpent={totalSpent} onEditLimit={() => setIsPlanModalOpen(true)} />
+          </section>
 
-        <h3 className="text-lg font-bold mb-4 mt-8 px-1">Ringkasan Bulan Ini</h3>
-        <SummaryGrid
-          dailyLimit={dailyLimit}
-          totalSpent={totalSpent}
-          onEditLimit={() => setIsPlanModalOpen(true)}
-        />
+          <FixedExpenseWidget totalFixed={totalFixed} onOpen={() => setIsListModalOpen(true)} />
 
-        <FixedExpenseWidget totalFixed={totalFixed} onOpen={() => setIsListModalOpen(true)} />
+          <section>
+            <h3 className="text-xl font-black tracking-tight mb-4 px-1">Aktivitas</h3>
+            <TransactionList transactions={transactions} />
+          </section>
+        </div>
+      </motion.div>
 
-        <TransactionList transactions={transactions} />
-      </div>
+      {/* Modals & Lists - No changes needed in logic */}
+      <FixedExpenseList isOpen={isListModalOpen} onClose={() => setIsListModalOpen(false)} expenses={fixedExpenses} onDelete={async (id) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }} onPay={handlePayFixedExpense} onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }} />
+      <AddTransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} formData={formData} setFormData={setFormData} loading={loading} />
+      <AddFixedExpenseModal isOpen={isFixedModalOpen} onClose={() => setIsFixedModalOpen(false)} onSubmit={handleSubmitFixed} fixedData={fixedData} setFixedData={setFixedData} loading={loading} />
+      <FinancialPlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} onSave={handleSavePlan} initialData={userData} totalFixed={totalFixed} />
 
-      <FixedExpenseList
-        isOpen={isListModalOpen}
-        onClose={() => setIsListModalOpen(false)}
-        expenses={fixedExpenses}
-        onDelete={async (id) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
-        onPay={handlePayFixedExpense}
-        onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
-      />
-
-      <AddTransactionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        loading={loading}
-      />
-
-      <AddFixedExpenseModal
-        isOpen={isFixedModalOpen}
-        onClose={() => setIsFixedModalOpen(false)}
-        onSubmit={handleSubmitFixed}
-        fixedData={fixedData}
-        setFixedData={setFixedData}
-        loading={loading}
-      />
-
-      <FinancialPlanModal
-        isOpen={isPlanModalOpen}
-        onClose={() => setIsPlanModalOpen(false)}
-        onSave={handleSavePlan}
-        initialData={userData}
-        totalFixed={totalFixed}
-      />
-
-      {/* Navigation Bar */}
-      {/* Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-900 px-8 py-4 flex justify-between items-center z-50">
-        {/* Tambahkan onClick ke Dashboard agar konsisten */}
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex flex-col items-center text-emerald-500"
-        >
-          <Home size={24} />
-          <span className="text-[10px] font-bold mt-1 uppercase">Home</span>
+      {/* Modern Floating Bottom Navigation */}
+      <nav className="fixed bottom-6 left-6 right-6 h-20 bg-zinc-900/80 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-2xl">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500">
+          <Home size={24} strokeWidth={2.5} />
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Home</span>
         </button>
 
-        <div className="relative -mt-14">
+        <div className="relative -mt-20">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-500 text-zinc-950 p-4 rounded-2xl shadow-lg active:scale-95 transition-all"
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] active:scale-90 transition-all border-4 border-zinc-950"
           >
-            <Plus size={28} />
+            <Plus size={32} strokeWidth={3} />
           </button>
         </div>
 
-        {/* INI YANG PERLU DIPERBAIKI: Tambahkan onClick={() => navigate('/reports')} */}
-        <button
-          onClick={() => navigate('/reports')}
-          className="flex flex-col items-center text-zinc-600 active:text-emerald-500 transition-colors"
-        >
-          <PieChart size={24} />
-          <span className="text-[10px] font-bold mt-1 uppercase">Laporan</span>
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors">
+          <PieChart size={24} strokeWidth={2.5} />
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Laporan</span>
         </button>
       </nav>
     </div>

@@ -1,36 +1,136 @@
-import { Calendar } from 'lucide-react';
+import React from 'react';
+import { Calendar, X, Pin, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
-  fixedData: any;
+  fixedData: {
+    name: string;
+    amount: string | number;
+    dueDate: string | number;
+  };
   setFixedData: (data: any) => void;
   loading: boolean;
 }
 
 export const AddFixedExpenseModal = ({ isOpen, onClose, onSubmit, fixedData, setFixedData, loading }: Props) => {
-  if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center px-6">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose}></div>
-      <div className="relative w-full max-sm bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 animate-in fade-in zoom-in duration-200 shadow-2xl">
-        <h2 className="text-xl font-bold mb-2 text-white">Tagihan Baru 📌</h2>
-        <form onSubmit={onSubmit} className="space-y-4 mt-4">
-          <input type="text" required placeholder="Nama Tagihan" className="w-full bg-zinc-800 border-none rounded-2xl p-4 text-white focus:ring-2 focus:ring-amber-500" value={fixedData.name} onChange={(e) => setFixedData({ ...fixedData, name: e.target.value })} />
-          <input type="number" required placeholder="Nominal" className="w-full bg-zinc-800 border-none rounded-2xl p-4 text-amber-400 font-bold text-lg focus:ring-2 focus:ring-amber-500" value={fixedData.amount} onChange={(e) => setFixedData({ ...fixedData, amount: e.target.value })} />
-          <div className="flex items-center bg-zinc-800 rounded-2xl p-4 text-white">
-            <Calendar size={18} className="text-zinc-500 mr-3" />
-            <input type="number" min="1" max="31" required placeholder="Tgl (1-31)" className="w-full bg-transparent focus:outline-none font-medium" value={fixedData.dueDate} onChange={(e) => setFixedData({ ...fixedData, dueDate: e.target.value })} />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 font-bold py-4 rounded-2xl text-white">Batal</button>
-            <button type="submit" disabled={loading} className="flex-1 bg-amber-500 text-zinc-950 font-bold py-4 rounded-2xl disabled:opacity-50">
-              {loading ? '...' : 'SIMPAN'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[150] flex items-end justify-center">
+          {/* Backdrop Blur Premium */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
+            onClick={onClose}
+          />
+
+          {/* Drawer Content */}
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="relative w-full max-w-md bg-zinc-900 rounded-t-[3rem] p-8 border-t border-white/5 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+          >
+            {/* Handle Bar */}
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8"></div>
+
+            <div className="flex justify-between items-center mb-8 px-2">
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                  Tagihan Baru <Pin size={20} className="text-amber-500 rotate-12" />
+                </h2>
+                <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Komitmen bulananmu</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 active:scale-90 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={onSubmit} className="space-y-5">
+              {/* Input Nama Tagihan */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-4">Nama Tagihan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Misal: Netflix, Listrik, Kosan"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-[1.5rem] py-4 px-6 text-white placeholder:text-zinc-700 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
+                  value={fixedData.name}
+                  onChange={(e) => setFixedData({ ...fixedData, name: e.target.value })}
+                />
+              </div>
+
+              {/* Input Nominal Amber Style */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-4">Nominal</label>
+                <div className="relative">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 font-black text-lg">Rp</div>
+                  <input
+                    type="number"
+                    required
+                    placeholder="0"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-[1.5rem] py-5 pl-14 pr-6 text-amber-400 font-black text-2xl focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
+                    value={fixedData.amount}
+                    onChange={(e) => setFixedData({ ...fixedData, amount: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Input Tanggal Jatu Tempo */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-4">Tanggal Jatuh Tempo (1-31)</label>
+                <div className="relative group">
+                  <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-amber-500 transition-colors" size={20} />
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    placeholder="Pilih Tanggal"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-[1.5rem] py-4 pl-14 pr-6 text-white focus:outline-none focus:border-amber-500/50 transition-all font-bold"
+                    value={fixedData.dueDate}
+                    onChange={(e) => setFixedData({ ...fixedData, dueDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 bg-zinc-800/50 border border-white/5 text-zinc-400 font-black py-5 rounded-[1.5rem] active:scale-95 transition-all"
+                >
+                  BATAL
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-[2] bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-5 rounded-[1.5rem] shadow-[0_10px_20px_rgba(245,158,11,0.2)] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? 'MENYIMPAN...' : (
+                    <>
+                      <Sparkles size={18} fill="currentColor" />
+                      SIMPAN TAGIHAN
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <div className="h-6"></div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

@@ -1,4 +1,5 @@
-import { CreditCard, ListFilter } from 'lucide-react';
+import { ReceiptText, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface FixedExpenseWidgetProps {
   totalFixed: number;
@@ -6,21 +7,36 @@ interface FixedExpenseWidgetProps {
 }
 
 export const FixedExpenseWidget = ({ totalFixed, onOpen }: FixedExpenseWidgetProps) => (
-  <button
+  <motion.button
+    whileTap={{ scale: 0.97 }}
     onClick={onOpen}
-    className="w-full bg-zinc-900/30 border border-zinc-800/50 p-5 rounded-3xl mb-8 flex items-center justify-between active:scale-[0.98] transition-all group"
+    className="w-full relative overflow-hidden bg-zinc-900/40 border border-white/5 p-6 rounded-[2rem] mb-10 flex items-center justify-between backdrop-blur-md group"
   >
-    <div className="flex items-center gap-4">
-      <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 group-hover:bg-amber-500/20 transition-colors">
-        <CreditCard size={20} />
+    {/* Dekorasi Light Beam */}
+    <div className="absolute top-0 left-0 w-24 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"></div>
+
+    <div className="flex items-center gap-5 relative z-10">
+      <div className="w-12 h-12 bg-amber-500/10 rounded-[1.25rem] flex items-center justify-center text-amber-500 shadow-[inset_0_0_15px_rgba(245,158,11,0.1)] group-hover:bg-amber-500/20 transition-all duration-500">
+        <ReceiptText size={22} strokeWidth={2.5} />
       </div>
+
       <div className="text-left">
-        <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest text-zinc-500">Tagihan Tetap</p>
-        <p className="text-lg font-bold text-amber-200 leading-none mt-1">Rp {totalFixed.toLocaleString('id-ID')}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Total Tagihan Bulanan</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xs font-bold text-amber-500/50">Rp</span>
+          <p className="text-xl font-black text-amber-200 leading-none">
+            {totalFixed.toLocaleString('id-ID')}
+          </p>
+        </div>
       </div>
     </div>
-    <div className="bg-zinc-800 p-2.5 rounded-xl text-zinc-500 group-hover:text-amber-400 group-hover:bg-amber-500/10 transition-all">
-      <ListFilter size={18} />
+
+    <div className="relative z-10 flex items-center gap-2 bg-zinc-800/50 py-2 px-3 rounded-2xl border border-white/5 group-hover:bg-amber-500/10 group-hover:border-amber-500/20 transition-all duration-500">
+      <span className="text-[10px] font-black text-zinc-500 group-hover:text-amber-500 uppercase tracking-tighter">Detail</span>
+      <ChevronRight size={16} className="text-zinc-600 group-hover:text-amber-500" />
     </div>
-  </button>
+
+    {/* Subtle Background Glow */}
+    <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all"></div>
+  </motion.button>
 );
