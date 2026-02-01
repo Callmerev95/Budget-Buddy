@@ -8,7 +8,10 @@ dotenv.config();
 const connectionString = process.env.DATABASE_URL;
 
 // 1. Buat pool koneksi menggunakan library 'pg'
-const pool = new pg.Pool({ connectionString });
+const pool = new pg.Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+});
 
 // 2. Buat adapter Prisma untuk PostgreSQL
 const adapter = new PrismaPg(pool);
