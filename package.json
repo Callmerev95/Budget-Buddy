@@ -1,0 +1,23 @@
+{
+  "name": "budget-buddy",
+  "version": "1.0.0",
+  "description": "**BudgetBuddy** adalah aplikasi manajemen keuangan personal berbasis SaaS yang membantu user mengelola jatah jajan harian secara cerdas.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Callmerev95/Budget-Buddy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Callmerev95/Budget-Buddy/issues"
+  },
+  "homepage": "https://github.com/Callmerev95/Budget-Buddy#readme"
+}
