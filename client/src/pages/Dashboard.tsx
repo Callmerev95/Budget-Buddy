@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, PieChart, Plus, AlertCircle } from 'lucide-react';
 import api from '../lib/api';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Header } from '../components/dashboard/Header';
 import { BalanceCard } from '../components/dashboard/BalanceCard';
 import { SummaryGrid } from '../components/dashboard/SummaryGrid';

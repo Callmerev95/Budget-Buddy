@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Wallet } from 'lucide-react';
 import api from '../lib/api';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');

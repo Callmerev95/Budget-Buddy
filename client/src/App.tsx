@@ -4,12 +4,26 @@ import RegisterPage from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './lib/ProtectedRoute';
 import Reports from './pages/Reports';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 
 function App() {
   return (
     <>
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster
+        theme="dark"
+        position="bottom-center"
+        richColors
+        closeButton
+        toastOptions={{
+          style: {
+            background: 'rgba(24, 24, 27, 0.8)', // zinc-900 dengan transparansi
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(39, 39, 42, 0.5)', // zinc-800
+            borderRadius: '20px',
+            color: '#fff',
+          },
+        }}
+      />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
