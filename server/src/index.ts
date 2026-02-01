@@ -4,6 +4,7 @@ import cors from "cors";
 import * as dotenv from "dotenv";
 import prisma from "./lib/prisma.js";
 import authRoutes from "./routes/auth.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Menggunakan route yang sudah dipisahkan
 app.use("/api/auth", authRoutes);
+app.use("/api/transactions", transactionRoutes); // Tambahkan ini
 
 app.get("/", (_req, res) => {
   res.send("BudgetBuddy API is running... 🚀");
