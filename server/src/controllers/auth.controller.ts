@@ -88,6 +88,9 @@ export const getMe = async (req: any, res: Response) => {
         name: true,
         email: true,
         dailyLimit: true,
+        monthlyIncome: true,
+        savingsTarget: true,
+        isPercentTarget: true,
       },
     });
 
@@ -118,5 +121,30 @@ export const updateLimit = async (req: any, res: Response) => {
   } catch (error) {
     console.error("Update Limit Error:", error);
     res.status(500).json({ message: "Gagal update limit" });
+  }
+};
+
+export const updateFinancialPlan = async (req: any, res: Response) => {
+  try {
+    const { monthlyIncome, savingsTarget, isPercentTarget, dailyLimit } =
+      req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: {
+        monthlyIncome: parseFloat(monthlyIncome),
+        savingsTarget: parseFloat(savingsTarget),
+        isPercentTarget: Boolean(isPercentTarget),
+        dailyLimit: parseFloat(dailyLimit), // Hasil hitung dari frontend disimpan di sini
+      },
+    });
+
+    res.status(200).json({
+      message: "Rencana keuangan diperbarui! 💰",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update Plan Error:", error);
+    res.status(500).json({ message: "Gagal update rencana keuangan" });
   }
 };
