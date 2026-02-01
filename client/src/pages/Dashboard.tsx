@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, User, LogOut, TrendingUp, TrendingDown } from 'lucide-react';
+import { Home, PieChart, Plus, LogOut, TrendingUp, TrendingDown, X } from 'lucide-react';
 import api from '../lib/api';
 
 const Dashboard = () => {
   const [userName, setUserName] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // State untuk Form sesuai Schema DailyLog
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    category: 'Makan & Minum'
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -22,6 +31,22 @@ const Dashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/transactions', formData);
+      setIsModalOpen(false);
+      setFormData({ description: '', amount: '', category: 'Makan & Minum' });
+      alert("Catatan berhasil disimpan! 💸");
+      // TODO: Refresh data transaksi di sini nanti
+    } catch (err) {
+      alert("Gagal menyimpan catatan");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,7 +88,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          {/* Decorative Circles */}
           <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
         </div>
 
@@ -96,6 +120,60 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* --- MODAL INPUT (BOTTOM SHEET) --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-zinc-900 rounded-t-[2.5rem] p-8 animate-in slide-in-from-bottom duration-300 shadow-2xl border-t border-zinc-800">
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6"></div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Tambah Catatan 📝</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-500"><X /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="text-xs text-zinc-500 font-bold uppercase ml-1">Deskripsi</label>
+                <input
+                  type="text" required placeholder="Makan siang, bensin, dll"
+                  className="w-full bg-zinc-800 border-none rounded-2xl p-4 mt-1 focus:ring-2 focus:ring-emerald-500 transition-all text-white"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 font-bold uppercase ml-1">Nominal (Rp)</label>
+                <input
+                  type="number" required placeholder="0"
+                  className="w-full bg-zinc-800 border-none rounded-2xl p-4 mt-1 text-emerald-400 text-xl font-bold focus:ring-2 focus:ring-emerald-500 transition-all"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 font-bold uppercase ml-1">Kategori</label>
+                <select
+                  className="w-full bg-zinc-800 border-none rounded-2xl p-4 mt-1 focus:ring-2 focus:ring-emerald-500 transition-all appearance-none text-white"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="Makan & Minum">🍔 Makan & Minum</option>
+                  <option value="Transportasi">🚗 Transportasi</option>
+                  <option value="Belanja">🛍️ Belanja</option>
+                  <option value="Hiburan">🎮 Hiburan</option>
+                  <option value="Lainnya">✨ Lainnya</option>
+                </select>
+              </div>
+              <button
+                type="submit" disabled={loading}
+                className="w-full bg-emerald-500 text-zinc-950 font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all mt-4 disabled:opacity-50"
+              >
+                {loading ? 'Menyimpan...' : 'Simpan Catatan'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-900 px-8 py-4 flex justify-between items-center z-50">
         <button className="flex flex-col items-center text-emerald-500 transition-transform active:scale-90">
@@ -103,9 +181,12 @@ const Dashboard = () => {
           <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Home</span>
         </button>
 
-        {/* Floating Action Button */}
+        {/* Floating Action Button - Sekarang bisa buka Modal */}
         <div className="relative -mt-14">
-          <button className="bg-emerald-500 text-zinc-950 p-4 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-emerald-500 text-zinc-950 p-4 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all"
+          >
             <Plus size={28} strokeWidth={3} />
           </button>
         </div>
