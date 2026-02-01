@@ -1,16 +1,16 @@
 {
-  "name": "shared",
+  "name": "@budget-buddy/shared",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
+  "description": "Shared schemas and types for BudgetBuddy",
+  "main": "./src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^3.22.4"
   }
 }
