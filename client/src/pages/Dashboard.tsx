@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, AlertCircle } from 'lucide-react';
+import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
 import { toast } from 'sonner';
-import { Header } from '../components/dashboard/Header';
 import { BalanceCard } from '../components/dashboard/BalanceCard';
 import { SummaryGrid } from '../components/dashboard/SummaryGrid';
 import { TransactionList } from '../components/dashboard/TransactionList';
@@ -14,12 +13,12 @@ import { AddTransactionModal } from '../components/dashboard/AddTransactionModal
 import { AddFixedExpenseModal } from '../components/dashboard/AddFixedExpenseModal';
 import { FinancialPlanModal } from '../components/dashboard/FinancialPlanModal';
 
-// --- Interfaces [cite: 2026-01-10] ---
 interface Transaction {
   id: string;
   description: string;
   amount: number;
   category: string;
+  createdAt?: string;
 }
 
 interface FixedExpense {
@@ -51,6 +50,26 @@ const Dashboard = () => {
   const [fixedData, setFixedData] = useState({ name: '', amount: '', dueDate: '1' });
   const [formData, setFormData] = useState({ description: '', amount: '', category: 'Makan & Minum' });
 
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const setupNotifications = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      if (Notification.permission === 'default') await Notification.requestPermission();
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription && Notification.permission === 'granted') {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: 'BCOnabemphnHRb2QkI-q6xeeehSk0F-mmharx8sLeAJ2LWEn-0HIR4nRlUilHY5rClK2TBoAhV0IfH-lKdqdhzA'
+        });
+      }
+      if (subscription) await api.post('/auth/subscribe', subscription);
+    } catch (err) {
+      console.error('Gagal setup notifikasi:', err);
+    }
+  };
+
   const fetchData = async () => {
     try {
       const [userRes, transRes, fixedRes] = await Promise.all([
@@ -58,7 +77,6 @@ const Dashboard = () => {
         api.get('/transactions'),
         api.get('/fixed-expenses')
       ]);
-
       setUserName(userRes.data.name);
       setDailyLimit(Number(userRes.data.dailyLimit) || 0);
       setTransactions(transRes.data);
@@ -73,9 +91,12 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    setupNotifications();
+  }, []);
 
-  const handleSavePlan = async (data: { monthlyIncome: number; savingsTarget: number; isPercentTarget: boolean }) => {
+  const handleSavePlan = async (data: any) => {
     setLoading(true);
     try {
       await api.patch('/auth/financial-plan', data);
@@ -87,26 +108,6 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePayFixedExpense = (expense: FixedExpense) => {
-    const processPayment = async () => {
-      setLoading(true);
-      try {
-        await api.post('/transactions', {
-          description: `Bayar: ${expense.name}`,
-          amount: Number(expense.amount),
-          category: 'Lainnya'
-        });
-        toast.success(`${expense.name} berhasil dibayar!`);
-        await fetchData();
-      } catch (err) {
-        toast.error('Gagal memproses pembayaran');
-      } finally {
-        setLoading(false);
-      }
-    };
-    processPayment();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,156 +126,120 @@ const Dashboard = () => {
     }
   };
 
-  const handleSubmitFixed = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await api.post('/fixed-expenses', fixedData);
-      setIsFixedModalOpen(false);
-      setIsListModalOpen(true);
-      setFixedData({ name: '', amount: '', dueDate: '1' });
-      await fetchData();
-      toast.success('Tagihan rutin disimpan!');
-    } catch (err) {
-      toast.error('Gagal menyimpan tagihan');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const todayStr = new Date().toISOString().split('T')[0];
+  const spentToday = transactions
+    .filter((t: any) => (t.createdAt || t.date || "").startsWith(todayStr))
+    .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const totalSpent = transactions.reduce((acc, curr) => acc + curr.amount, 0);
+  const filteredActivities = transactions.filter((t: any) =>
+    (t.createdAt || t.date || "").startsWith(selectedDate)
+  );
+
   const totalFixed = fixedExpenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const totalSpentAllTime = transactions.reduce((acc, curr) => acc + curr.amount, 0);
   const savingsAmount = userData.isPercentTarget
     ? (userData.monthlyIncome * userData.savingsTarget) / 100
     : userData.savingsTarget;
-  const monthlyBudgetFree = userData.monthlyIncome - savingsAmount - totalSpent - totalFixed;
-  const remainingLimit = dailyLimit - totalSpent;
+
+  const remainingLimit = dailyLimit - spentToday;
+  const monthlyBudgetFree = userData.monthlyIncome - savingsAmount - totalSpentAllTime - totalFixed;
+  const usagePercentage = dailyLimit > 0 ? (spentToday / dailyLimit) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pb-40">
+    <div className="min-h-screen bg-[#050505] text-white pb-40 font-sans selection:bg-emerald-500/30">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none" />
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 pt-8 max-w-md mx-auto"
+        className="p-6 pt-10 max-w-md mx-auto relative z-10"
       >
-        <Header userName={userName} onLogout={() => { localStorage.removeItem('token'); navigate('/login'); }} />
+        {/* Header Premium Style [cite: 2026-01-12] */}
+        <motion.div className="flex items-center justify-between mb-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
+                {new Date().getHours() < 12 ? '☀️ Selamat Pagi' : '🌙 Selamat Malam'}
+              </p>
+            </div>
+            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent">
+              {userName}!
+            </h1>
+          </div>
+          <button
+            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+            className="w-12 h-12 bg-zinc-900/80 border border-white/10 rounded-2xl flex items-center justify-center text-zinc-400 hover:text-rose-500 backdrop-blur-xl transition-all active:scale-90"
+          >
+            <LogOut size={20} strokeWidth={2.5} />
+          </button>
+        </motion.div>
 
-        <div className="mt-6">
-          <BalanceCard
-            remainingLimit={remainingLimit}
-            usagePercentage={dailyLimit > 0 ? (totalSpent / dailyLimit) * 100 : 0}
-            dailyLimit={dailyLimit}
-          />
-        </div>
+        <BalanceCard remainingLimit={remainingLimit} usagePercentage={usagePercentage} dailyLimit={dailyLimit} />
 
         <div className="mt-10 space-y-10">
-          {/* Ringkasan Section */}
           <section>
-            <div className="flex justify-between items-center mb-5 px-1">
+            <div className="flex justify-between items-center mb-6 px-1">
               <h3 className="text-xl font-black tracking-tight uppercase text-zinc-200">Ringkasan</h3>
-              <button
-                onClick={() => setIsPlanModalOpen(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/10 active:scale-95 transition-all"
-              >
-                Atur Limit
-              </button>
+              <button onClick={() => setIsPlanModalOpen(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">Atur Limit</button>
             </div>
-            <SummaryGrid dailyLimit={dailyLimit} totalSpent={totalSpent} onEditLimit={() => setIsPlanModalOpen(true)} />
+            <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
-          {/* Kesehatan Finansial Section (Hierarchy Baru) [cite: 2026-01-14] */}
           <div className="space-y-5">
             <FixedExpenseWidget totalFixed={totalFixed} onOpen={() => setIsListModalOpen(true)} />
-
             <AnimatePresence>
               {totalFixed > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className={`p-5 rounded-[2.25rem] flex items-center gap-4 border backdrop-blur-xl transition-all duration-500 ${monthlyBudgetFree < 0
-                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    }`}
-                >
-                  <div className={`p-3 rounded-2xl ${monthlyBudgetFree < 0 ? 'bg-rose-500/20' : 'bg-emerald-500/20'}`}>
-                    <AlertCircle size={22} strokeWidth={2.5} />
-                  </div>
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className={`p-5 rounded-[2.25rem] flex items-center gap-4 border backdrop-blur-xl transition-all ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
+                  <div className={`p-3 rounded-2xl ${monthlyBudgetFree < 0 ? 'bg-rose-500/20' : 'bg-emerald-500/20'}`}><AlertCircle size={22} strokeWidth={2.5} /></div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-0.5">Sisa Saldo Aman Bulanan</p>
-                    <p className="text-xl font-black tracking-tight">
-                      Rp {monthlyBudgetFree.toLocaleString('id-ID')}
-                    </p>
+                    <p className="text-xl font-black tracking-tight">Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Aktivitas Section [cite: 2026-01-14] */}
           <section>
-            <h3 className="text-xl font-black tracking-tight mb-5 px-1 uppercase text-zinc-200">Aktivitas</h3>
-            <TransactionList transactions={transactions} limit={4} />
+            <div className="flex justify-between items-center mb-6 px-1">
+              <h3 className="text-xl font-black tracking-tight uppercase text-zinc-200">Aktivitas</h3>
+              <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5">
+                <Calendar size={14} className="text-emerald-500" />
+                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-emerald-500 text-[10px] font-black focus:outline-none uppercase cursor-pointer" />
+              </div>
+            </div>
+            {filteredActivities.length > 0 ? (
+              <TransactionList transactions={filteredActivities} limit={10} />
+            ) : (
+              <div className="py-12 text-center border-2 border-dashed border-zinc-900 rounded-[2.25rem]">
+                <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">No logs for today ☕</p>
+              </div>
+            )}
           </section>
         </div>
       </motion.div>
 
-      {/* Overlays */}
-      <FixedExpenseList
-        isOpen={isListModalOpen}
-        onClose={() => setIsListModalOpen(false)}
-        expenses={fixedExpenses}
-        onDelete={async (id: string) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
-        onPay={handlePayFixedExpense}
-        onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
-      />
+      {/* Modals remain the same */}
+      <FixedExpenseList isOpen={isListModalOpen} onClose={() => setIsListModalOpen(false)} expenses={fixedExpenses} onDelete={async (id: string) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }} onPay={async (expense: any) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }} onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }} />
+      <AddTransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} formData={formData} setFormData={setFormData} loading={loading} />
+      <AddFixedExpenseModal isOpen={isFixedModalOpen} onClose={() => setIsFixedModalOpen(false)} onSubmit={async (e: any) => { e.preventDefault(); await api.post('/fixed-expenses', fixedData); setIsFixedModalOpen(false); fetchData(); }} fixedData={fixedData} setFixedData={setFixedData} loading={loading} />
+      <FinancialPlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} onSave={handleSavePlan} initialData={userData} totalFixed={totalFixed} />
 
-      <AddTransactionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        loading={loading}
-      />
-
-      <AddFixedExpenseModal
-        isOpen={isFixedModalOpen}
-        onClose={() => setIsFixedModalOpen(false)}
-        onSubmit={handleSubmitFixed}
-        fixedData={fixedData}
-        setFixedData={setFixedData}
-        loading={loading}
-      />
-
-      <FinancialPlanModal
-        isOpen={isPlanModalOpen}
-        onClose={() => setIsPlanModalOpen(false)}
-        onSave={handleSavePlan}
-        initialData={userData}
-        totalFixed={totalFixed}
-      />
-
-      {/* Floating Navigation */}
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+      {/* Bottom Navigation Sinkron [cite: 2026-01-14] */}
+      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 group">
           <Home size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-emerald-500">Home</span>
         </button>
-
         <div className="relative -mt-20">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-zinc-950"
-          >
-            <Plus size={32} strokeWidth={3} />
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsModalOpen(true)} className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] border-4 border-zinc-950 relative z-20">
+            <Plus size={32} strokeWidth={3.5} />
           </motion.button>
+          <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
-
-        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors group">
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-all active:scale-90 group">
           <PieChart size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-zinc-500 group-hover:text-emerald-500">Laporan</span>
         </button>
       </nav>
     </div>

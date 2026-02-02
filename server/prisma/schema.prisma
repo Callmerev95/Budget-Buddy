@@ -19,6 +19,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   logs          DailyLog[]
   fixedExpenses FixedExpense[]
+  pushSubscription String?  
 }
 
 model DailyLog {

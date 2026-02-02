@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingDown, PieChart as PieIcon, Activity, Home, Plus, PieChart } from 'lucide-react'; // Tambahkan Home, Plus, PieChart
+import { TrendingDown, PieChart as PieIcon, Activity, Home, Plus, PieChart, Calendar, ChevronRight } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
 import { TransactionList } from '../components/dashboard/TransactionList';
 
@@ -13,6 +13,7 @@ interface Transaction {
   description: string;
   amount: number;
   category: string;
+  createdAt?: string;
 }
 
 interface ChartItem {
@@ -22,29 +23,15 @@ interface ChartItem {
 
 const Reports = () => {
   const navigate = useNavigate();
-  const [chartData, setChartData] = useState<ChartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [totalExpense, setTotalExpense] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const fetchReportData = async () => {
     try {
+      setLoading(true);
       const res = await api.get('/transactions');
-      const rawData: Transaction[] = res.data;
-      setTransactions(rawData);
-
-      const categoryTotals = rawData.reduce((acc: Record<string, number>, curr: Transaction) => {
-        acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
-        return acc;
-      }, {});
-
-      const formattedData = Object.keys(categoryTotals).map(cat => ({
-        name: cat,
-        value: categoryTotals[cat]
-      }));
-
-      setChartData(formattedData);
-      setTotalExpense(rawData.reduce((acc: number, curr: Transaction) => acc + curr.amount, 0));
+      setTransactions(res.data);
     } catch (err) {
       console.error("Gagal ambil data laporan", err);
     } finally {
@@ -54,122 +41,207 @@ const Reports = () => {
 
   useEffect(() => { fetchReportData(); }, []);
 
+  const filteredTransactions = transactions.filter((t: any) => {
+    const txDate = t.createdAt || t.date || "";
+    return txDate.startsWith(selectedDate);
+  });
+
+  const categoryTotals = filteredTransactions.reduce((acc: Record<string, number>, curr: Transaction) => {
+    acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
+    return acc;
+  }, {});
+
+  const chartData = Object.keys(categoryTotals).map(cat => ({
+    name: cat,
+    value: categoryTotals[cat]
+  }));
+
+  const totalExpense = filteredTransactions.reduce((acc: number, curr: Transaction) => acc + curr.amount, 0);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 pb-44"> {/* Tambah padding bottom untuk nav [cite: 2026-01-14] */}
+    <div className="min-h-screen bg-[#050505] text-white p-6 pb-44 font-sans selection:bg-emerald-500/30">
 
-      {/* Header Premium - Back Button Removed [cite: 2026-01-14] */}
+      {/* Background Glow Deco */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/10 blur-[120px] pointer-events-none" />
+
+      {/* Header Premium - Polished */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-10"
+        className="flex items-center justify-between mb-12 relative z-10"
       >
-        <div>
-          <h1 className="text-3xl font-black tracking-tighter">Analytics</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mt-1">Ringkasan Pengeluaran</p>
-        </div>
-        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-lg shadow-emerald-500/5">
-          <Activity size={22} strokeWidth={2.5} />
-        </div>
-      </motion.div>
-
-      {/* Total Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden bg-zinc-900/40 border border-white/5 p-8 rounded-[2.5rem] mb-8 backdrop-blur-xl shadow-2xl"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-rose-500/10 rounded-lg">
-            <TrendingDown size={16} className="text-rose-500" />
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent">
+            Analytics
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">Live Insights</p>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Total Outflow</span>
         </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-lg font-bold text-rose-500/50 italic">Rp</span>
-          <h2 className="text-4xl font-black tracking-tighter text-white">
-            {totalExpense.toLocaleString('id-ID')}
-          </h2>
+
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-emerald-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+          <div className="relative flex items-center gap-3 bg-zinc-900/80 border border-white/10 rounded-2xl px-4 py-2.5 backdrop-blur-xl transition-all">
+            <Calendar size={15} className="text-emerald-500" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-transparent text-emerald-500 text-[11px] font-black focus:outline-none uppercase cursor-pointer tracking-wider"
+            />
+          </div>
         </div>
-        <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl"></div>
       </motion.div>
 
-      {/* Chart Container */}
+      {/* Hero Cards Section */}
+      <div className="grid grid-cols-1 gap-6 mb-12 relative z-10">
+        <motion.div
+          key={`total-${selectedDate}`}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="group relative overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-white/10 p-8 rounded-[2.5rem] shadow-2xl"
+        >
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+              <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                <TrendingDown size={20} className="text-rose-500" />
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Status Pemakaian</p>
+                <span className="px-3 py-1 bg-zinc-800 rounded-full text-[9px] font-black uppercase text-zinc-300">
+                  {filteredTransactions.length} Transaksi
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-2">Total Outflow</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-rose-500/40 tracking-tighter">Rp</span>
+              <h2 className="text-5xl font-black tracking-tighter text-white">
+                {totalExpense.toLocaleString('id-ID')}
+              </h2>
+            </div>
+          </div>
+
+          {/* Decorative element */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 blur-[80px] group-hover:bg-rose-500/10 transition-colors duration-700" />
+        </motion.div>
+      </div>
+
+      {/* Chart & Distribution Container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-zinc-900/40 border border-white/5 p-8 rounded-[3rem] h-[500px] relative backdrop-blur-md shadow-2xl mb-12"
+        className="bg-zinc-900/30 border border-white/5 p-8 rounded-[3rem] relative backdrop-blur-xl shadow-2xl mb-12 overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Distribusi Dana</h3>
-            <p className="text-[9px] font-bold text-zinc-600 mt-1 uppercase italic">Berdasarkan Kategori</p>
+            <h3 className="text-lg font-black tracking-tight text-white">Distribusi Dana</h3>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Berdasarkan Kategori Terdaftar</p>
           </div>
-          <PieIcon size={20} className="text-emerald-500 opacity-50" strokeWidth={2.5} />
+          <div className="p-3 bg-emerald-500/10 rounded-2xl">
+            <PieIcon size={20} className="text-emerald-500" strokeWidth={2.5} />
+          </div>
         </div>
 
-        {!loading && chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="85%">
-            <RechartsPie>
-              <Pie
-                data={chartData}
-                innerRadius={90}
-                outerRadius={135}
-                paddingAngle={10}
-                dataKey="value"
-                stroke="none"
-              >
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="focus:outline-none" />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(24, 24, 27, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: '24px',
-                  backdropFilter: 'blur(10px)',
-                  padding: '12px 20px',
-                }}
-                itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                formatter={(value: number | string | undefined) => {
-                  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-                  return [`Rp ${(numericValue || 0).toLocaleString('id-ID')}`, 'Jumlah'];
-                }}
-              />
-              <Legend
-                iconType="circle"
-                layout="horizontal"
-                verticalAlign="bottom"
-                align="center"
-                wrapperStyle={{ paddingTop: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}
-              />
-            </RechartsPie>
-          </ResponsiveContainer>
-        ) : !loading && (
-          <div className="h-full flex flex-col items-center justify-center text-zinc-600">
-            <PieIcon size={28} className="mb-4 opacity-20" />
-            <p className="text-xs font-black uppercase tracking-widest opacity-40">Data Kosong</p>
-          </div>
-        )}
+        <div className="h-[350px] w-full relative">
+          {!loading && chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPie>
+                <Pie
+                  data={chartData}
+                  innerRadius={85}
+                  outerRadius={120}
+                  paddingAngle={8}
+                  dataKey="value"
+                  stroke="none"
+                  animationBegin={0}
+                  animationDuration={1200}
+                >
+                  {chartData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      className="focus:outline-none hover:opacity-80 transition-opacity"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(9, 9, 11, 0.95)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '20px',
+                    backdropFilter: 'blur(20px)',
+                    padding: '15px',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                  }}
+                  itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
+                  formatter={(value: any) => [`Rp ${value.toLocaleString('id-ID')}`, 'Value']}
+                />
+              </RechartsPie>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center space-y-4">
+              <div className="p-6 bg-zinc-800/30 rounded-full border border-white/5">
+                <PieIcon size={32} className="opacity-20 text-white" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">No Data Detected</p>
+            </div>
+          )}
 
-        <div className="absolute top-[52%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Stats</p>
-          <p className="text-xs font-black text-white">{chartData.length} Cat</p>
+          {/* Center Info */}
+          {chartData.length > 0 && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+              <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Active</p>
+              <p className="text-2xl font-black text-white">{chartData.length}</p>
+              <p className="text-[8px] font-bold text-emerald-500 uppercase">Sectors</p>
+            </div>
+          )}
+        </div>
+
+        {/* Custom Grid Legend */}
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          {chartData.map((item, index) => (
+            <div key={index} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-black text-zinc-400 uppercase truncate">{item.name}</p>
+                <p className="text-[11px] font-bold text-white">Rp {item.value.toLocaleString('id-ID')}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </motion.div>
 
-      {/* Detail Riwayat Transaksi (Full List) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <TransactionList transactions={transactions} />
-      </motion.div>
+      {/* Transaction List Section */}
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-6 px-2">
+          <h3 className="text-sm font-black uppercase tracking-[0.3em] text-zinc-500">Transaction Log</h3>
+          <ChevronRight size={16} className="text-zinc-700" />
+        </div>
 
-      {/* Premium Floating Bottom Navigation [cite: 2026-01-14] */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedDate}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            <TransactionList transactions={filteredTransactions} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Floating Navigation - Professional Grade */}
+      {/* Floating Navigation - Sinkron dengan Dashboard [cite: 2026-01-14] */}
       <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors group">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors group"
+        >
           <Home size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
         </button>
@@ -177,14 +249,17 @@ const Reports = () => {
         <div className="relative -mt-20">
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => navigate('/dashboard')} // Arahkan ke dashboard untuk input
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-zinc-950"
+            onClick={() => navigate('/dashboard')}
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-[#050505]"
           >
             <Plus size={32} strokeWidth={3} />
           </motion.button>
         </div>
 
-        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-emerald-500 group">
+        <button
+          onClick={() => navigate('/reports')}
+          className="flex flex-col items-center text-emerald-500 group"
+        >
           <PieChart size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
         </button>

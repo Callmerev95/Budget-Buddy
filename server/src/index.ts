@@ -1,4 +1,5 @@
 console.log("DEBUG DATABASE_URL:", process.env.DATABASE_URL ? "ADA" : "KOSONG");
+import "./lib/scheduler.js"; 
 import express from "express";
 import cors from "cors";
 import * as dotenv from "dotenv";

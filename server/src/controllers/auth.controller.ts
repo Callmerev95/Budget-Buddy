@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
 import { registerSchema } from "../../../shared/src/schemas/auth.schema.js";
+import webpush from "../lib/webpush.js"; // Import yang baru kita buat
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -146,5 +147,65 @@ export const updateFinancialPlan = async (req: any, res: Response) => {
   } catch (error) {
     console.error("Update Plan Error:", error);
     res.status(500).json({ message: "Gagal update rencana keuangan" });
+  }
+};
+
+export const subscribe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const subscription = req.body;
+
+    // Debug dulu bro buat mastiin isi req.user apa [cite: 2026-01-14]
+    console.log("Debug User Auth:", (req as any).user);
+
+    // Ambil ID dengan lebih aman
+    const userFromToken = (req as any).user;
+    const userId =
+      userFromToken?.id || userFromToken?.userId || userFromToken?.sub;
+
+    // Jika userId tetap tidak ada, stop di sini daripada Prisma error
+    if (!userId) {
+      res.status(401).json({ message: "User ID tidak ditemukan dalam token" });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId }, // Sekarang ID tidak akan undefined lagi [cite: 2026-01-14]
+      data: {
+        pushSubscription: JSON.stringify(subscription),
+      },
+    });
+
+    res.status(200).json({ message: "Subscription berhasil disimpan!" });
+  } catch (error) {
+    console.error("Error at subscribe controller:", error);
+    res.status(500).json({ message: "Gagal menyimpan subscription" });
+  }
+};
+
+export const sendPushNotification = async (
+  userId: string,
+  title: string,
+  message: string,
+) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { pushSubscription: true },
+    });
+
+    if (!user?.pushSubscription) return;
+
+    const subscription = JSON.parse(user.pushSubscription);
+
+    const payload = JSON.stringify({
+      title: title,
+      body: message,
+      icon: "/icon-192x192.png", // Sesuaikan dengan icon di folder public client
+    });
+
+    await webpush.sendNotification(subscription, payload);
+    console.log(`✅ Notif terkirim ke user: ${userId}`);
+  } catch (error) {
+    console.error("❌ Gagal kirim push notif:", error);
   }
 };
