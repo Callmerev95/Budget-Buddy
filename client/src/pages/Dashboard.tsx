@@ -247,28 +247,31 @@ const Dashboard = () => {
           </section>
 
           <section>
-            <div className="flex flex-col gap-4 mb-6 px-1">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                  <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Aktivitas</h3>
-                </div>
-                <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
+            <div className="flex items-center justify-between mb-6 px-1">
+              <div className="flex items-center gap-2 flex-grow">
+                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400 whitespace-nowrap">
+                  Aktivitas
+                </h3>
+                <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent ml-2" />
               </div>
-              <div className="flex justify-start">
-                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5 active:bg-zinc-800 transition-colors">
-                  <Calendar size={12} className="text-emerald-500" />
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer"
-                  />
-                </div>
-              </div>
+
+              {/* Date Picker  */}
+              <motion.div
+                whileTap={{ scale: 0.95, backgroundColor: "rgba(39, 39, 42, 0.8)" }}
+                className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5 transition-colors cursor-pointer ml-4 shadow-sm"
+              >
+                <Calendar size={12} className="text-emerald-500" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer tracking-tighter"
+                />
+              </motion.div>
             </div>
 
-            {/* Pastikan props onDelete dilempar ke sini */}
+            {/* props onDelete  */}
             <TransactionList
               transactions={filteredActivities}
               onDelete={handleDeleteTransaction}

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingDown, PieChart as PieIcon, Activity, Home, Plus, PieChart, Calendar, ChevronRight } from 'lucide-react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { TrendingDown, PieChart as PieIcon, Home, Plus, PieChart, Calendar } from 'lucide-react';
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
+import { toast } from 'sonner';
 import { TransactionList } from '../components/dashboard/TransactionList';
 
 const COLORS = ['#10b981', '#f43f5e', '#fbbf24', '#3b82f6', '#a855f7', '#ec4899'];
@@ -14,11 +15,7 @@ interface Transaction {
   amount: number;
   category: string;
   createdAt?: string;
-}
-
-interface ChartItem {
-  name: string;
-  value: number;
+  date?: string;
 }
 
 const Reports = () => {
@@ -33,6 +30,7 @@ const Reports = () => {
       const res = await api.get('/transactions');
       setTransactions(res.data);
     } catch (err) {
+      toast.error("Gagal sinkronisasi laporan");
       console.error("Gagal ambil data laporan", err);
     } finally {
       setLoading(false);
@@ -40,6 +38,19 @@ const Reports = () => {
   };
 
   useEffect(() => { fetchReportData(); }, []);
+
+  const handleDeleteTransaction = async (id: string) => {
+    const originalTransactions = [...transactions];
+    try {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      await api.delete(`/transactions/${id}`);
+      toast.success('Transaksi dihapus');
+      fetchReportData();
+    } catch (err) {
+      setTransactions(originalTransactions);
+      toast.error('Gagal menghapus transaksi');
+    }
+  };
 
   const filteredTransactions = transactions.filter((t: any) => {
     const txDate = t.createdAt || t.date || "";
@@ -60,41 +71,39 @@ const Reports = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 pb-44 font-sans selection:bg-emerald-500/30">
-
-      {/* Background Glow Deco */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/10 blur-[120px] pointer-events-none" />
 
-      {/* Header Premium - Polished */}
+      {/* Header Premium Polished [cite: 2026-02-03] */}
       <motion.div
-        initial={{ opacity: 0, y: -15 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-12 relative z-10"
+        className="relative z-20 flex items-end justify-between mb-10 px-1"
       >
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-br from-white via-white to-zinc-600 bg-clip-text text-transparent leading-none">
             Analytics
           </h1>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">Live Insights</p>
+          <div className="flex items-center gap-2 bg-zinc-900/50 w-fit px-2 py-1 rounded-full border border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-400">Live Insights</p>
           </div>
         </div>
 
-        <div className="group relative">
-          <div className="absolute -inset-0.5 bg-emerald-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
-          <div className="relative flex items-center gap-3 bg-zinc-900/80 border border-white/10 rounded-2xl px-4 py-2.5 backdrop-blur-xl transition-all">
-            <Calendar size={15} className="text-emerald-500" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-emerald-500 text-[11px] font-black focus:outline-none uppercase cursor-pointer tracking-wider"
-            />
-          </div>
-        </div>
+        {/* Date Selector - Mobile Optimized [cite: 2026-02-03] */}
+        <motion.div
+          whileTap={{ scale: 0.95, backgroundColor: "rgba(39, 39, 42, 0.9)" }}
+          className="relative flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-2xl pl-3 pr-2 py-2 transition-colors cursor-pointer shadow-sm"
+        >
+          <Calendar size={14} className="text-emerald-500" />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-transparent text-emerald-500 text-[10px] font-black focus:outline-none uppercase cursor-pointer tracking-tighter"
+          />
+        </motion.div>
       </motion.div>
 
-      {/* Hero Cards Section */}
       <div className="grid grid-cols-1 gap-6 mb-12 relative z-10">
         <motion.div
           key={`total-${selectedDate}`}
@@ -123,13 +132,10 @@ const Reports = () => {
               </h2>
             </div>
           </div>
-
-          {/* Decorative element */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 blur-[80px] group-hover:bg-rose-500/10 transition-colors duration-700" />
         </motion.div>
       </div>
 
-      {/* Chart & Distribution Container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -190,7 +196,6 @@ const Reports = () => {
             </div>
           )}
 
-          {/* Center Info */}
           {chartData.length > 0 && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
               <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Active</p>
@@ -200,7 +205,6 @@ const Reports = () => {
           )}
         </div>
 
-        {/* Custom Grid Legend */}
         <div className="grid grid-cols-2 gap-3 mt-8">
           {chartData.map((item, index) => (
             <div key={index} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
@@ -214,53 +218,37 @@ const Reports = () => {
         </div>
       </motion.div>
 
-      {/* Transaction List Section */}
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-6 px-2">
-          <h3 className="text-sm font-black uppercase tracking-[0.3em] text-zinc-500">Transaction Log</h3>
-          <ChevronRight size={16} className="text-zinc-700" />
-        </div>
-
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedDate}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
             className="space-y-4"
           >
-            <TransactionList transactions={filteredTransactions} />
+            <TransactionList transactions={filteredTransactions} onDelete={handleDeleteTransaction} />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Floating Navigation - Professional Grade */}
-      {/* Floating Navigation - Sinkron dengan Dashboard [cite: 2026-01-14] */}
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors group"
-        >
-          <Home size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-2xl">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-zinc-500 active:scale-90 transition-transform">
+          <Home size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
         </button>
-
         <div className="relative -mt-20">
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/dashboard')}
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-[#050505]"
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] border-4 border-zinc-950 relative z-20"
           >
-            <Plus size={32} strokeWidth={3} />
+            <Plus size={32} strokeWidth={3.5} />
           </motion.button>
+          <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
-
-        <button
-          onClick={() => navigate('/reports')}
-          className="flex flex-col items-center text-emerald-500 group"
-        >
-          <PieChart size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
+          <PieChart size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
         </button>
       </nav>

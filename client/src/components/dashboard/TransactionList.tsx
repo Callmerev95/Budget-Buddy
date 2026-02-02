@@ -105,7 +105,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
                       <p className="text-sm font-black text-rose-500 tracking-tight whitespace-nowrap">
                         - Rp {item.amount.toLocaleString('id-ID')}
                       </p>
-
+                      
                       {/* Badge Settled diletakkan di bawah nominal */}
                       <div className="flex items-center gap-1 text-emerald-500/60">
                         <CheckCircle2 size={10} strokeWidth={3} />
