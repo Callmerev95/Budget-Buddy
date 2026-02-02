@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingDown, PieChart as PieIcon, Activity, ChevronRight } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { TrendingDown, PieChart as PieIcon, Activity, Home, Plus, PieChart } from 'lucide-react'; // Tambahkan Home, Plus, PieChart
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import api from '../lib/api';
+import { TransactionList } from '../components/dashboard/TransactionList';
 
-// Skema warna yang lebih vibrant untuk chart
 const COLORS = ['#10b981', '#f43f5e', '#fbbf24', '#3b82f6', '#a855f7', '#ec4899'];
 
 interface Transaction {
-  category: string;
+  id: string;
+  description: string;
   amount: number;
+  category: string;
 }
 
 interface ChartItem {
@@ -21,15 +23,17 @@ interface ChartItem {
 const Reports = () => {
   const navigate = useNavigate();
   const [chartData, setChartData] = useState<ChartItem[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalExpense, setTotalExpense] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchReportData = async () => {
     try {
       const res = await api.get('/transactions');
-      const transactions: Transaction[] = res.data;
+      const rawData: Transaction[] = res.data;
+      setTransactions(rawData);
 
-      const categoryTotals = transactions.reduce((acc: Record<string, number>, curr: Transaction) => {
+      const categoryTotals = rawData.reduce((acc: Record<string, number>, curr: Transaction) => {
         acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
         return acc;
       }, {});
@@ -40,7 +44,7 @@ const Reports = () => {
       }));
 
       setChartData(formattedData);
-      setTotalExpense(transactions.reduce((acc: number, curr: Transaction) => acc + curr.amount, 0));
+      setTotalExpense(rawData.reduce((acc: number, curr: Transaction) => acc + curr.amount, 0));
     } catch (err) {
       console.error("Gagal ambil data laporan", err);
     } finally {
@@ -51,27 +55,20 @@ const Reports = () => {
   useEffect(() => { fetchReportData(); }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 pb-32">
-      {/* Header Premium */}
+    <div className="min-h-screen bg-zinc-950 text-white p-6 pb-44"> {/* Tambah padding bottom untuk nav [cite: 2026-01-14] */}
+
+      {/* Header Premium - Back Button Removed [cite: 2026-01-14] */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between mb-10"
       >
-        <div className="flex items-center gap-5">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-12 h-12 flex items-center justify-center bg-zinc-900/50 border border-white/5 rounded-2xl active:scale-90 transition-all shadow-xl"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">Analytics</h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mt-0.5">Ringkasan Pengeluaran</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-black tracking-tighter">Analytics</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mt-1">Ringkasan Pengeluaran</p>
         </div>
-        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
-          <Activity size={20} strokeWidth={2.5} />
+        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-lg shadow-emerald-500/5">
+          <Activity size={22} strokeWidth={2.5} />
         </div>
       </motion.div>
 
@@ -93,8 +90,6 @@ const Reports = () => {
             {totalExpense.toLocaleString('id-ID')}
           </h2>
         </div>
-
-        {/* Dekorasi Cahaya */}
         <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl"></div>
       </motion.div>
 
@@ -102,7 +97,7 @@ const Reports = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-zinc-900/40 border border-white/5 p-8 rounded-[3rem] h-[500px] relative backdrop-blur-md shadow-2xl"
+        className="bg-zinc-900/40 border border-white/5 p-8 rounded-[3rem] h-[500px] relative backdrop-blur-md shadow-2xl mb-12"
       >
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -114,7 +109,7 @@ const Reports = () => {
 
         {!loading && chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="85%">
-            <PieChart>
+            <RechartsPie>
               <Pie
                 data={chartData}
                 innerRadius={90}
@@ -122,8 +117,6 @@ const Reports = () => {
                 paddingAngle={10}
                 dataKey="value"
                 stroke="none"
-                animationBegin={200}
-                animationDuration={1500}
               >
                 {chartData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="focus:outline-none" />
@@ -136,11 +129,8 @@ const Reports = () => {
                   borderRadius: '24px',
                   backdropFilter: 'blur(10px)',
                   padding: '12px 20px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                 }}
                 itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                cursor={{ fill: 'transparent' }}
-                // Fix Error: Handle potential undefined value [cite: 2026-01-10]
                 formatter={(value: number | string | undefined) => {
                   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
                   return [`Rp ${(numericValue || 0).toLocaleString('id-ID')}`, 'Jumlah'];
@@ -151,25 +141,54 @@ const Reports = () => {
                 layout="horizontal"
                 verticalAlign="bottom"
                 align="center"
-                wrapperStyle={{ paddingTop: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}
+                wrapperStyle={{ paddingTop: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}
               />
-            </PieChart>
+            </RechartsPie>
           </ResponsiveContainer>
         ) : !loading && (
           <div className="h-full flex flex-col items-center justify-center text-zinc-600">
-            <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
-              <PieIcon size={28} className="text-zinc-700" />
-            </div>
-            <p className="text-xs font-black uppercase tracking-widest">Data Kosong</p>
+            <PieIcon size={28} className="mb-4 opacity-20" />
+            <p className="text-xs font-black uppercase tracking-widest opacity-40">Data Kosong</p>
           </div>
         )}
 
-        {/* Info Detail Center (Hanya Visual) */}
         <div className="absolute top-[52%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
           <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Stats</p>
           <p className="text-xs font-black text-white">{chartData.length} Cat</p>
         </div>
       </motion.div>
+
+      {/* Detail Riwayat Transaksi (Full List) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <TransactionList transactions={transactions} />
+      </motion.div>
+
+      {/* Premium Floating Bottom Navigation [cite: 2026-01-14] */}
+      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-colors group">
+          <Home size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
+        </button>
+
+        <div className="relative -mt-20">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate('/dashboard')} // Arahkan ke dashboard untuk input
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-zinc-950"
+          >
+            <Plus size={32} strokeWidth={3} />
+          </motion.button>
+        </div>
+
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-emerald-500 group">
+          <PieChart size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
+        </button>
+      </nav>
     </div>
   );
 };
