@@ -96,6 +96,23 @@ const Dashboard = () => {
     setupNotifications();
   }, []);
 
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      // Optimistic UI: Update lokal dulu biar terasa instan
+      const updatedTransactions = transactions.filter(t => t.id !== id);
+      setTransactions(updatedTransactions);
+
+      await api.delete(`/transactions/${id}`);
+      toast.success('Transaksi dihapus, limit dipulihkan! 🔄');
+
+      // Refresh data untuk memastikan sinkronisasi dengan server
+      await fetchData();
+    } catch (err) {
+      toast.error('Gagal menghapus transaksi');
+      fetchData(); // Rollback jika gagal
+    }
+  };
+
   const handleSavePlan = async (data: any) => {
     setLoading(true);
     try {
@@ -209,7 +226,11 @@ const Dashboard = () => {
               </div>
             </div>
             {filteredActivities.length > 0 ? (
-              <TransactionList transactions={filteredActivities} limit={10} />
+              <TransactionList
+                transactions={filteredActivities}
+                limit={10}
+                onDelete={handleDeleteTransaction}
+              />
             ) : (
               <div className="py-12 text-center border-2 border-dashed border-zinc-900 rounded-[2.25rem]">
                 <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">No logs for today ☕</p>
