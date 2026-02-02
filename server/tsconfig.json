@@ -12,7 +12,7 @@
     "declaration": true,
     "removeComments": true,
 
-    /* Strict Type-Checking (Pondasi Anti-Any) */
+    /* Strict Type-Checking (Pondasi Anti-Any) [cite: 2026-01-10] */
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -24,7 +24,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias untuk Shared Folder (Tanpa baseUrl) */
+    /* Alias untuk Shared Folder (Penting: Tambahkan baseUrl) */
+    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/src/*"]
     },
@@ -38,6 +39,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
+  /* Pastikan folder shared masuk dalam jangkauan kompilasi */
   "include": ["src/**/*", "../shared/src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
 }
