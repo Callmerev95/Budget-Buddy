@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut } from 'lucide-react';
+import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
 import { toast } from 'sonner';
@@ -76,7 +76,7 @@ const Dashboard = () => {
       }
       if (subscription) await api.post('/auth/subscribe', subscription);
     } catch (err) {
-      console.error('Gagal setup notifikasi:', err);
+      console.error('Push notification setup failed:', err);
     }
   };
 
@@ -151,10 +151,10 @@ const Dashboard = () => {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const spentToday = transactions
-    .filter((t: any) => (t.createdAt || t.date || "").startsWith(todayStr))
+    .filter((t: Transaction) => (t.createdAt || t.date || "").startsWith(todayStr))
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const filteredActivities = transactions.filter((t: any) =>
+  const filteredActivities = transactions.filter((t: Transaction) =>
     (t.createdAt || t.date || "").startsWith(selectedDate)
   );
 
@@ -172,7 +172,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#050505] text-white pb-40 font-sans selection:bg-emerald-500/30">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* FLOATING HEADER [cite: 2026-01-12, 2026-01-14] */}
+      {/* Floating Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled
           ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.8)]'
@@ -211,8 +211,8 @@ const Dashboard = () => {
         <BalanceCard remainingLimit={remainingLimit} usagePercentage={usagePercentage} dailyLimit={dailyLimit} />
 
         <div className="mt-10 space-y-10">
+          {/* Daily Summary Section */}
           <section>
-            {/* SECTION HEADER REFINED: Removed button, added accent glow dot [cite: 2026-01-12, 2026-01-14] */}
             <div className="flex items-center gap-3 mb-6 px-1">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
@@ -224,28 +224,54 @@ const Dashboard = () => {
             <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
-          <div className="space-y-5">
-            <FixedExpenseWidget totalFixed={totalFixed} onOpen={() => setIsListModalOpen(true)} />
+          {/* Monthly Utility Strip */}
+          <section className="-mt-4">
             <AnimatePresence>
               {totalFixed > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-5 rounded-[2.25rem] flex items-center gap-4 border backdrop-blur-xl transition-all ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    }`}
+                  className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]"
                 >
-                  <div className={`p-3 rounded-2xl ${monthlyBudgetFree < 0 ? 'bg-rose-500/20' : 'bg-emerald-500/20'}`}>
-                    <AlertCircle size={22} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-0.5">Sisa Saldo Aman Bulanan</p>
-                    <p className="text-xl font-black tracking-tight">Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
+                  {/* Monthly Expenses (Interactive) */}
+                  <button
+                    onClick={() => setIsListModalOpen(true)}
+                    className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform"
+                  >
+                    <div className="w-10 h-10 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                      <AlertCircle size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Tagihan Bulanan</p>
+                      <p className="text-sm font-black text-amber-500/90 tracking-tight">
+                        Rp {totalFixed.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    <ChevronRight size={12} className="absolute top-0 right-0 text-zinc-700" />
+                  </button>
+
+                  <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-zinc-800 to-transparent mx-2" />
+
+                  {/* Remaining Budget (Status) */}
+                  <div className="flex-1 flex items-center gap-3 px-2">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.1)] ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'
+                      }`}>
+                      <PieChart size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Saldo Tersimpan</p>
+                      <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'
+                        }`}>
+                        Rp {monthlyBudgetFree.toLocaleString('id-ID')}
+                      </p>
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </section>
 
+          {/* Activity Logs Section */}
           <section>
             <div className="flex items-center gap-3 mb-6 px-1">
               <div className="flex items-center gap-2">
@@ -280,19 +306,48 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* Modals & Nav remains consistent [cite: 2026-01-14] */}
+      {/* Global Modals */}
       <FixedExpenseList
         isOpen={isListModalOpen}
         onClose={() => setIsListModalOpen(false)}
         expenses={fixedExpenses}
         onDelete={async (id: string) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
-        onPay={async (expense: any) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }}
+        onPay={async (expense: FixedExpense) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }}
         onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
       />
-      <AddTransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} formData={formData} setFormData={setFormData} loading={loading} />
-      <AddFixedExpenseModal isOpen={isFixedModalOpen} onClose={() => setIsFixedModalOpen(false)} onSubmit={async (e: any) => { e.preventDefault(); await api.post('/fixed-expenses', fixedData); setIsFixedModalOpen(false); fetchData(); }} fixedData={fixedData} setFixedData={setFixedData} loading={loading} />
-      <FinancialPlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} onSave={handleSavePlan} initialData={userData} totalFixed={totalFixed} />
 
+      <AddTransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        loading={loading}
+      />
+
+      <AddFixedExpenseModal
+        isOpen={isFixedModalOpen}
+        onClose={() => setIsFixedModalOpen(false)}
+        onSubmit={async (e: React.FormEvent) => {
+          e.preventDefault();
+          await api.post('/fixed-expenses', fixedData);
+          setIsFixedModalOpen(false);
+          fetchData();
+        }}
+        fixedData={fixedData}
+        setFixedData={setFixedData}
+        loading={loading}
+      />
+
+      <FinancialPlanModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        onSave={handleSavePlan}
+        initialData={userData}
+        totalFixed={totalFixed}
+      />
+
+      {/* Bottom Navigation */}
       <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 group">
           <Home size={24} strokeWidth={2.5} />
@@ -300,7 +355,6 @@ const Dashboard = () => {
         </button>
         <div className="relative -mt-20">
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsModalOpen(true)}
             className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] border-4 border-zinc-950 relative z-20"
