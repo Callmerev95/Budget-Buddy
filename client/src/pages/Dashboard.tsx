@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight } from 'lucide-react';
+import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { BalanceCard } from '../components/dashboard/BalanceCard';
 import { SummaryGrid } from '../components/dashboard/SummaryGrid';
 import { TransactionList } from '../components/dashboard/TransactionList';
-import { FixedExpenseWidget } from '../components/dashboard/FixedExpenseWidget';
 import { FixedExpenseList } from '../components/dashboard/FixedExpenseList';
 import { AddTransactionModal } from '../components/dashboard/AddTransactionModal';
 import { AddFixedExpenseModal } from '../components/dashboard/AddFixedExpenseModal';
@@ -106,16 +105,25 @@ const Dashboard = () => {
     setupNotifications();
   }, []);
 
+  // Perbaikan Fungsi Delete: Menggunakan Optimistic Update
   const handleDeleteTransaction = async (id: string) => {
+    const originalTransactions = [...transactions];
+
     try {
-      const updatedTransactions = transactions.filter(t => t.id !== id);
-      setTransactions(updatedTransactions);
+      // Hapus langsung dari UI agar responsif
+      setTransactions(prev => prev.filter(t => t.id !== id));
+
+      // Kirim perintah hapus ke API
       await api.delete(`/transactions/${id}`);
-      toast.success('Transaksi dihapus! 🔄');
-      await fetchData();
-    } catch (err) {
-      toast.error('Gagal menghapus transaksi');
+      toast.success('Transaksi berhasil dihapus');
+
+      // Refresh data background untuk memastikan konsistensi saldo
       fetchData();
+    } catch (err) {
+      // Kembalikan data jika API gagal
+      setTransactions(originalTransactions);
+      toast.error('Gagal menghapus transaksi dari server');
+      console.error("Delete error:", err);
     }
   };
 
@@ -123,7 +131,7 @@ const Dashboard = () => {
     setLoading(true);
     try {
       await api.patch('/auth/financial-plan', data);
-      toast.success('Rencana keuangan diterapkan! 💰');
+      toast.success('Rencana keuangan diterapkan!');
       setIsPlanModalOpen(false);
       await fetchData();
     } catch (err) {
@@ -172,29 +180,20 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#050505] text-white pb-40 font-sans selection:bg-emerald-500/30">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* Floating Header */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled
-          ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.8)]'
-          : 'bg-transparent'
-          }`}
-      >
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-2xl' : 'bg-transparent'}`}>
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
-                {new Date().getHours() < 12 ? '☀️ Selamat Pagi' : '🌙 Selamat Malam'}
-              </p>
-            </div>
-            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white via-white to-zinc-600 bg-clip-text text-transparent leading-none">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
+              {new Date().getHours() < 12 ? '☀️ Selamat Pagi' : '🌙 Selamat Malam'}
+            </p>
+            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent leading-none">
               {userName}!
             </h1>
           </div>
-
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-            className="w-12 h-12 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500 active:bg-zinc-800 transition-all shadow-lg"
+            className="w-12 h-12 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500 active:bg-zinc-800 transition-all"
           >
             <LogOut size={20} strokeWidth={2.5} />
           </motion.button>
@@ -203,15 +202,10 @@ const Dashboard = () => {
 
       <div className="h-32" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="p-6 max-w-md mx-auto relative z-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 max-w-md mx-auto relative z-10">
         <BalanceCard remainingLimit={remainingLimit} usagePercentage={usagePercentage} dailyLimit={dailyLimit} />
 
         <div className="mt-10 space-y-10">
-          {/* Daily Summary Section */}
           <section>
             <div className="flex items-center gap-3 mb-6 px-1">
               <div className="flex items-center gap-2">
@@ -220,50 +214,31 @@ const Dashboard = () => {
               </div>
               <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
             </div>
-
             <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
-          {/* Monthly Utility Strip */}
           <section className="-mt-4">
             <AnimatePresence>
               {totalFixed > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]"
-                >
-                  {/* Monthly Expenses (Interactive) */}
-                  <button
-                    onClick={() => setIsListModalOpen(true)}
-                    className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform"
-                  >
-                    <div className="w-10 h-10 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]">
+                  <button onClick={() => setIsListModalOpen(true)} className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform">
+                    <div className="w-10 h-10 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
                       <AlertCircle size={18} strokeWidth={2.5} />
                     </div>
                     <div className="text-left">
                       <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Tagihan Bulanan</p>
-                      <p className="text-sm font-black text-amber-500/90 tracking-tight">
-                        Rp {totalFixed.toLocaleString('id-ID')}
-                      </p>
+                      <p className="text-sm font-black text-amber-500/90 tracking-tight">Rp {totalFixed.toLocaleString('id-ID')}</p>
                     </div>
                     <ChevronRight size={12} className="absolute top-0 right-0 text-zinc-700" />
                   </button>
-
                   <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-zinc-800 to-transparent mx-2" />
-
-                  {/* Remaining Budget (Status) */}
                   <div className="flex-1 flex items-center gap-3 px-2">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.1)] ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'
-                      }`}>
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                       <PieChart size={18} strokeWidth={2.5} />
                     </div>
                     <div className="text-left">
                       <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Saldo Tersimpan</p>
-                      <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'
-                        }`}>
-                        Rp {monthlyBudgetFree.toLocaleString('id-ID')}
-                      </p>
+                      <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'}`}>Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -271,87 +246,41 @@ const Dashboard = () => {
             </AnimatePresence>
           </section>
 
-          {/* Activity Logs Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6 px-1">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Aktivitas</h3>
+            <div className="flex flex-col gap-4 mb-6 px-1">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Aktivitas</h3>
+                </div>
+                <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
               </div>
-              <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
-
-              <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5">
-                <Calendar size={12} className="text-emerald-500" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer"
-                />
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5 active:bg-zinc-800 transition-colors">
+                  <Calendar size={12} className="text-emerald-500" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 
-            {filteredActivities.length > 0 ? (
-              <TransactionList
-                transactions={filteredActivities}
-                limit={10}
-                onDelete={handleDeleteTransaction}
-              />
-            ) : (
-              <div className="py-12 text-center border-2 border-dashed border-zinc-900 rounded-[2.25rem]">
-                <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">No logs for today ☕</p>
-              </div>
-            )}
+            {/* Pastikan props onDelete dilempar ke sini */}
+            <TransactionList
+              transactions={filteredActivities}
+              onDelete={handleDeleteTransaction}
+            />
           </section>
         </div>
       </motion.div>
 
-      {/* Global Modals */}
-      <FixedExpenseList
-        isOpen={isListModalOpen}
-        onClose={() => setIsListModalOpen(false)}
-        expenses={fixedExpenses}
-        onDelete={async (id: string) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
-        onPay={async (expense: FixedExpense) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }}
-        onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
-      />
-
-      <AddTransactionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        loading={loading}
-      />
-
-      <AddFixedExpenseModal
-        isOpen={isFixedModalOpen}
-        onClose={() => setIsFixedModalOpen(false)}
-        onSubmit={async (e: React.FormEvent) => {
-          e.preventDefault();
-          await api.post('/fixed-expenses', fixedData);
-          setIsFixedModalOpen(false);
-          fetchData();
-        }}
-        fixedData={fixedData}
-        setFixedData={setFixedData}
-        loading={loading}
-      />
-
-      <FinancialPlanModal
-        isOpen={isPlanModalOpen}
-        onClose={() => setIsPlanModalOpen(false)}
-        onSave={handleSavePlan}
-        initialData={userData}
-        totalFixed={totalFixed}
-      />
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
-        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 group">
+      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-2xl">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
           <Home size={24} strokeWidth={2.5} />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-emerald-500">Home</span>
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
         </button>
         <div className="relative -mt-20">
           <motion.button
@@ -363,11 +292,43 @@ const Dashboard = () => {
           </motion.button>
           <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
-        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 group">
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 active:scale-90 transition-transform">
           <PieChart size={24} strokeWidth={2.5} />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-zinc-500">Laporan</span>
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
         </button>
       </nav>
+
+      <FixedExpenseList
+        isOpen={isListModalOpen}
+        onClose={() => setIsListModalOpen(false)}
+        expenses={fixedExpenses}
+        onDelete={async (id) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
+        onPay={async (expense) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }}
+        onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
+      />
+      <AddTransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        loading={loading}
+      />
+      <AddFixedExpenseModal
+        isOpen={isFixedModalOpen}
+        onClose={() => setIsFixedModalOpen(false)}
+        onSubmit={async (e) => { e.preventDefault(); await api.post('/fixed-expenses', fixedData); setIsFixedModalOpen(false); fetchData(); }}
+        fixedData={fixedData}
+        setFixedData={setFixedData}
+        loading={loading}
+      />
+      <FinancialPlanModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        onSave={handleSavePlan}
+        initialData={userData}
+        totalFixed={totalFixed}
+      />
     </div>
   );
 };

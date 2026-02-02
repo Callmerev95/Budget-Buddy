@@ -1,6 +1,6 @@
-import { Request, Response } from "express"; 
+import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
-import { sendPushNotification } from "./auth.controller.js"; 
+import { sendPushNotification } from "./auth.controller.js";
 
 export const addLog = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -80,5 +80,33 @@ export const payFixedExpense = async (
     });
   } catch (error) {
     res.status(500).json({ message: "Gagal memproses pembayaran tagihan" });
+  }
+};
+
+export const deleteLog = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Mengambil userId dengan aman sesuai struktur yang sudah ada di file kamu
+    const userFromToken = (req as any).user;
+    const userId = userFromToken?.id || userFromToken?.userId;
+
+    if (!userId) {
+      res.status(401).json({ message: "Sesi habis, silakan login ulang" });
+      return;
+    }
+
+    // Gunakan dailyLog sesuai nama model di schema prisma kamu
+    await prisma.dailyLog.delete({
+      where: {
+        id: id,
+        userId: userId, // Pastikan hanya bisa hapus milik sendiri [cite: 2026-02-03]
+      },
+    });
+
+    res.status(200).json({ message: "Transaksi berhasil dihapus" });
+  } catch (error) {
+    console.error("Delete Log Error:", error);
+    res.status(500).json({ message: "Gagal menghapus transaksi" });
   }
 };

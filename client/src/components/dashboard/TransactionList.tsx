@@ -9,7 +9,6 @@ interface Transaction {
   category: string;
 }
 
-// Tambahkan prop onDelete [cite: 2026-01-12]
 interface TransactionListProps {
   transactions: Transaction[];
   limit?: number;
@@ -58,10 +57,9 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
 
         {limit && transactions.length > limit && (
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/reports')}
-            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/5 py-2 px-4 rounded-xl border border-emerald-500/10 hover:bg-emerald-500/10 transition-all"
+            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/5 py-2 px-4 rounded-xl border border-emerald-500/10 active:bg-emerald-500/10 transition-all"
           >
             Lihat Semua <ChevronRight size={12} strokeWidth={3} />
           </motion.button>
@@ -72,7 +70,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
         variants={container}
         initial="hidden"
         animate="show"
-        className="space-y-4"
+        className="space-y-3"
       >
         <AnimatePresence mode="popLayout">
           {displayedTransactions.length > 0 ? (
@@ -84,40 +82,37 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
                   variants={itemAnim}
                   exit={{ opacity: 0, scale: 0.95, x: 20 }}
                   layout
-                  className="bg-zinc-900/40 border border-white/5 p-4 rounded-[1.75rem] flex items-center justify-between backdrop-blur-md group relative overflow-hidden active:bg-zinc-900/60 transition-all shadow-xl"
+                  className="bg-zinc-900/30 border border-white/5 p-4 rounded-[1.75rem] flex items-center justify-between backdrop-blur-md relative overflow-hidden active:bg-zinc-900/60 transition-all"
                 >
-                  <div className="flex items-center gap-4 relative z-10">
-                    <motion.div
-                      whileHover={{ rotate: 5 }}
-                      className={`w-12 h-12 ${details.bg} ${details.color} rounded-2xl flex items-center justify-center shadow-lg`}
-                    >
+                  {/* SISI KIRI: Ikon & Info Deskripsi */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className={`w-12 h-12 flex-shrink-0 ${details.bg} ${details.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                       {details.icon}
-                    </motion.div>
-                    <div>
-                      <p className="text-sm font-black text-white leading-tight">
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-white leading-tight tracking-tight truncate">
                         {item.description}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">
-                          {item.category}
-                        </p>
-                        <span className="w-1 h-1 bg-zinc-700 rounded-full" />
-                        <div className="flex items-center gap-1">
-                          <CheckCircle2 size={10} className="text-emerald-500/50" />
-                          <p className="text-[8px] text-zinc-600 font-bold uppercase">Settled</p>
-                        </div>
-                      </div>
+                      <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest mt-1">
+                        {item.category}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 relative z-10">
-                    <div className="text-right">
-                      <p className="text-sm font-black text-rose-500 tracking-tight">
+                  {/* SISI KANAN: Nominal & Status Settled (Saran User) */}
+                  <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="text-sm font-black text-rose-500 tracking-tight whitespace-nowrap">
                         - Rp {item.amount.toLocaleString('id-ID')}
                       </p>
+
+                      {/* Badge Settled diletakkan di bawah nominal */}
+                      <div className="flex items-center gap-1 text-emerald-500/60">
+                        <CheckCircle2 size={10} strokeWidth={3} />
+                        <p className="text-[8px] font-black uppercase tracking-wider">Settled</p>
+                      </div>
                     </div>
 
-                    {/* Button Delete Premium [cite: 2026-01-12] */}
                     {onDelete && (
                       <motion.button
                         whileTap={{ scale: 0.8 }}
@@ -125,7 +120,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
                           e.stopPropagation();
                           onDelete(item.id);
                         }}
-                        className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/10 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all hover:bg-rose-500 hover:text-white"
+                        className="w-9 h-9 flex items-center justify-center text-zinc-700 active:text-rose-500 transition-colors"
                       >
                         <Trash2 size={16} strokeWidth={2.5} />
                       </motion.button>
@@ -138,7 +133,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="bg-zinc-900/20 border border-dashed border-zinc-800 rounded-[2.5rem] py-16 text-center"
+              className="bg-zinc-900/20 border border-dashed border-zinc-800 rounded-[2.5rem] py-16 text-center w-full"
             >
               <div className="w-16 h-16 bg-zinc-900/50 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-700 border border-white/5">
                 <Layers size={24} />
