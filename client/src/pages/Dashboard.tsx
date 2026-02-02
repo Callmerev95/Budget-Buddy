@@ -56,7 +56,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 15); // Sensitivitas scroll sedikit ditingkatkan [cite: 2026-01-14]
+      setScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -172,17 +172,16 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#050505] text-white pb-40 font-sans selection:bg-emerald-500/30">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* FLOATING HEADER: Increased transparency (60%) & higher backdrop-blur [cite: 2026-01-12, 2026-01-14] */}
+      {/* FLOATING HEADER [cite: 2026-01-12, 2026-01-14] */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled
           ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.8)]'
           : 'bg-transparent'
           }`}
       >
-        <div className="max-max-w-md mx-auto flex items-center justify-between">
+        <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
                 {new Date().getHours() < 12 ? '☀️ Selamat Pagi' : '🌙 Selamat Malam'}
               </p>
@@ -193,31 +192,16 @@ const Dashboard = () => {
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.05, backgroundColor: 'rgba(244, 63, 94, 0.1)' }} // Sedikit merah transparan saat hover
-            whileTap={{ scale: 0.9 }} // Efek membal (Haptic feel) saat ditekan
-            onClick={() => {
-              toast.promise(new Promise((resolve) => setTimeout(resolve, 500)), {
-                loading: 'Logging out...',
-                success: () => {
-                  localStorage.removeItem('token');
-                  navigate('/login');
-                  return 'Sampai jumpa lagi! 👋';
-                },
-              });
-            }}
-            className="w-12 h-12 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500 hover:text-rose-500 transition-colors shadow-lg shadow-black/40 group"
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+            className="w-12 h-12 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500 active:bg-zinc-800 transition-all shadow-lg"
           >
-            <LogOut
-              size={20}
-              strokeWidth={2.5}
-              className="group-hover:-translate-x-0.5 transition-transform" // Animasi icon sedikit bergeser
-            />
+            <LogOut size={20} strokeWidth={2.5} />
           </motion.button>
         </div>
       </header>
 
-      {/* SPACER REVISED: Reduced from h-44 to h-36 for tighter gap [cite: 2026-01-12] */}
-      <div className="h-36" />
+      <div className="h-32" />
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -228,15 +212,15 @@ const Dashboard = () => {
 
         <div className="mt-10 space-y-10">
           <section>
-            <div className="flex justify-between items-center mb-6 px-1">
-              <h3 className="text-xl font-black tracking-tight uppercase text-zinc-200">Ringkasan</h3>
-              <button
-                onClick={() => setIsPlanModalOpen(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 active:scale-95 transition-transform"
-              >
-                Atur Limit
-              </button>
+            {/* SECTION HEADER REFINED: Removed button, added accent glow dot [cite: 2026-01-12, 2026-01-14] */}
+            <div className="flex items-center gap-3 mb-6 px-1">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Ringkasan</h3>
+              </div>
+              <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
             </div>
+
             <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
@@ -263,18 +247,24 @@ const Dashboard = () => {
           </div>
 
           <section>
-            <div className="flex justify-between items-center mb-6 px-1">
-              <h3 className="text-xl font-black tracking-tight uppercase text-zinc-200">Aktivitas</h3>
+            <div className="flex items-center gap-3 mb-6 px-1">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Aktivitas</h3>
+              </div>
+              <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
+
               <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5">
-                <Calendar size={14} className="text-emerald-500" />
+                <Calendar size={12} className="text-emerald-500" />
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-emerald-500 text-[10px] font-black focus:outline-none uppercase cursor-pointer"
+                  className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer"
                 />
               </div>
             </div>
+
             {filteredActivities.length > 0 ? (
               <TransactionList
                 transactions={filteredActivities}
@@ -290,6 +280,7 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
+      {/* Modals & Nav remains consistent [cite: 2026-01-14] */}
       <FixedExpenseList
         isOpen={isListModalOpen}
         onClose={() => setIsListModalOpen(false)}
@@ -304,7 +295,7 @@ const Dashboard = () => {
 
       <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 group">
-          <Home size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+          <Home size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-emerald-500">Home</span>
         </button>
         <div className="relative -mt-20">
@@ -318,9 +309,9 @@ const Dashboard = () => {
           </motion.button>
           <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
-        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 hover:text-emerald-500 transition-all active:scale-90 group">
-          <PieChart size={24} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-zinc-500 group-hover:text-emerald-500">Laporan</span>
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 group">
+          <PieChart size={24} strokeWidth={2.5} />
+          <span className="text-[9px] font-black mt-1 uppercase tracking-widest text-zinc-500">Laporan</span>
         </button>
       </nav>
     </div>
