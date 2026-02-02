@@ -89,7 +89,6 @@ const Reports = () => {
           </div>
         </div>
 
-        {/* Date Selector - Mobile Optimized [cite: 2026-02-03] */}
         <motion.div
           whileTap={{ scale: 0.95, backgroundColor: "rgba(39, 39, 42, 0.9)" }}
           className="relative flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-2xl pl-3 pr-2 py-2 transition-colors cursor-pointer shadow-sm"
@@ -104,6 +103,7 @@ const Reports = () => {
         </motion.div>
       </motion.div>
 
+      {/* Stats and Charts Sections remain the same */}
       <div className="grid grid-cols-1 gap-6 mb-12 relative z-10">
         <motion.div
           key={`total-${selectedDate}`}
@@ -132,7 +132,7 @@ const Reports = () => {
               </h2>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 blur-[80px] group-hover:bg-rose-500/10 transition-colors duration-700" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 blur-[80px] transition-colors duration-700" />
         </motion.div>
       </div>
 
@@ -141,6 +141,7 @@ const Reports = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-zinc-900/30 border border-white/5 p-8 rounded-[3rem] relative backdrop-blur-xl shadow-2xl mb-12 overflow-hidden"
       >
+        {/* Chart Content remains the same */}
         <div className="flex items-center justify-between mb-10">
           <div>
             <h3 className="text-lg font-black tracking-tight text-white">Distribusi Dana</h3>
@@ -166,11 +167,7 @@ const Reports = () => {
                   animationDuration={1200}
                 >
                   {chartData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                      className="focus:outline-none hover:opacity-80 transition-opacity"
-                    />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -179,8 +176,7 @@ const Reports = () => {
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '20px',
                     backdropFilter: 'blur(20px)',
-                    padding: '15px',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                    padding: '15px'
                   }}
                   itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
                   formatter={(value: any) => [`Rp ${value.toLocaleString('id-ID')}`, 'Value']}
@@ -189,18 +185,7 @@ const Reports = () => {
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex flex-col items-center justify-center space-y-4">
-              <div className="p-6 bg-zinc-800/30 rounded-full border border-white/5">
-                <PieIcon size={32} className="opacity-20 text-white" />
-              </div>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">No Data Detected</p>
-            </div>
-          )}
-
-          {chartData.length > 0 && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-              <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Active</p>
-              <p className="text-2xl font-black text-white">{chartData.length}</p>
-              <p className="text-[8px] font-bold text-emerald-500 uppercase">Sectors</p>
             </div>
           )}
         </div>
@@ -218,7 +203,7 @@ const Reports = () => {
         </div>
       </motion.div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 mb-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedDate}
@@ -232,21 +217,24 @@ const Reports = () => {
         </AnimatePresence>
       </div>
 
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-2xl">
+      {/* Navigasi Grounded Floating - Reports [cite: 2026-02-03] */}
+      <nav className="fixed bottom-0 left-0 right-0 h-24 bg-zinc-900/80 backdrop-blur-3xl border-t border-white/5 rounded-t-[2.5rem] flex justify-between items-center px-12 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-zinc-500 active:scale-90 transition-transform">
           <Home size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
         </button>
-        <div className="relative -mt-20">
+
+        <div className="relative -mt-16">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/dashboard')}
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] border-4 border-zinc-950 relative z-20"
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-[#050505] relative z-20"
           >
             <Plus size={32} strokeWidth={3.5} />
           </motion.button>
           <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
+
         <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
           <PieChart size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>

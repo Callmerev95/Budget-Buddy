@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { BalanceCard } from '../components/dashboard/BalanceCard';
@@ -105,25 +105,16 @@ const Dashboard = () => {
     setupNotifications();
   }, []);
 
-  // Perbaikan Fungsi Delete: Menggunakan Optimistic Update
   const handleDeleteTransaction = async (id: string) => {
     const originalTransactions = [...transactions];
-
     try {
-      // Hapus langsung dari UI agar responsif
       setTransactions(prev => prev.filter(t => t.id !== id));
-
-      // Kirim perintah hapus ke API
       await api.delete(`/transactions/${id}`);
       toast.success('Transaksi berhasil dihapus');
-
-      // Refresh data background untuk memastikan konsistensi saldo
       fetchData();
     } catch (err) {
-      // Kembalikan data jika API gagal
       setTransactions(originalTransactions);
       toast.error('Gagal menghapus transaksi dari server');
-      console.error("Delete error:", err);
     }
   };
 
@@ -177,7 +168,7 @@ const Dashboard = () => {
   const usagePercentage = dailyLimit > 0 ? (spentToday / dailyLimit) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-40 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#050505] text-white pb-44 font-sans selection:bg-emerald-500/30">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
 
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-2xl' : 'bg-transparent'}`}>
@@ -217,33 +208,43 @@ const Dashboard = () => {
             <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
+          {/* Ringkasan Tagihan & Saldo Tersimpan [cite: 2026-02-03] */}
           <section className="-mt-4">
-            <AnimatePresence>
-              {totalFixed > 0 && (
-                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]">
-                  <button onClick={() => setIsListModalOpen(true)} className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform">
-                    <div className="w-10 h-10 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
-                      <AlertCircle size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Tagihan Bulanan</p>
-                      <p className="text-sm font-black text-amber-500/90 tracking-tight">Rp {totalFixed.toLocaleString('id-ID')}</p>
-                    </div>
-                    <ChevronRight size={12} className="absolute top-0 right-0 text-zinc-700" />
-                  </button>
-                  <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-zinc-800 to-transparent mx-2" />
-                  <div className="flex-1 flex items-center gap-3 px-2">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                      <PieChart size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Saldo Tersimpan</p>
-                      <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'}`}>Rp {monthlyBudgetFree.toLocaleString('id-ID')}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]"
+            >
+              <button
+                onClick={() => setIsListModalOpen(true)}
+                className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform"
+              >
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${totalFixed > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-500'}`}>
+                  <AlertCircle size={18} strokeWidth={2.5} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Tagihan Bulanan</p>
+                  <p className={`text-sm font-black tracking-tight ${totalFixed > 0 ? 'text-amber-500/90' : 'text-zinc-600'}`}>
+                    {totalFixed > 0 ? `Rp ${totalFixed.toLocaleString('id-ID')}` : 'Belum Ada'}
+                  </p>
+                </div>
+                <ChevronRight size={12} className="absolute top-0 right-0 text-zinc-700" />
+              </button>
+
+              <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-zinc-800 to-transparent mx-2" />
+
+              <div className="flex-1 flex items-center gap-3 px-2">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                  <PieChart size={18} strokeWidth={2.5} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Saldo Tersimpan</p>
+                  <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'}`}>
+                    Rp {monthlyBudgetFree.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </section>
 
           <section>
@@ -256,7 +257,6 @@ const Dashboard = () => {
                 <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent ml-2" />
               </div>
 
-              {/* Date Picker  */}
               <motion.div
                 whileTap={{ scale: 0.95, backgroundColor: "rgba(39, 39, 42, 0.8)" }}
                 className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5 transition-colors cursor-pointer ml-4 shadow-sm"
@@ -271,7 +271,6 @@ const Dashboard = () => {
               </motion.div>
             </div>
 
-            {/* props onDelete  */}
             <TransactionList
               transactions={filteredActivities}
               onDelete={handleDeleteTransaction}
@@ -280,21 +279,24 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-zinc-900/90 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] flex justify-between items-center px-10 z-50 shadow-2xl">
+      {/* Navigasi Grounded Floating [cite: 2026-02-03] */}
+      <nav className="fixed bottom-0 left-0 right-0 h-24 bg-zinc-900/80 backdrop-blur-3xl border-t border-white/5 rounded-t-[2.5rem] flex justify-between items-center px-12 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
           <Home size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
         </button>
-        <div className="relative -mt-20">
+
+        <div className="relative -mt-16">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] border-4 border-zinc-950 relative z-20"
+            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-[#050505] relative z-20"
           >
             <Plus size={32} strokeWidth={3.5} />
           </motion.button>
           <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
+
         <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 active:scale-90 transition-transform">
           <PieChart size={24} strokeWidth={2.5} />
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
