@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // Alamat server backend kita
+  baseURL: "https://budget-buddy-production-523b.up.railway.app/", // Alamat server backend
   headers: {
     "Content-Type": "application/json",
   },
