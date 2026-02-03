@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
+import ResetPasswordPage from './pages/ResetPassword';
+import ForgotPasswordPage from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './lib/ProtectedRoute';
 import Reports from './pages/Reports';
@@ -28,6 +30,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Route yang diproteksi */}
           <Route element={<ProtectedRoute />}>

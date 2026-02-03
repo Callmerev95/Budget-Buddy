@@ -1,41 +1,52 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Wallet, Eye, EyeOff, Loader2 } from 'lucide-react';
-import api from '../lib/api';
+import { Lock, ArrowRight, Eye, EyeOff, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { loginSchema } from '../../../shared/src/schemas/auth.schema';
-import type { LoginInput } from '../../../shared/src/schemas/auth.schema';
 
-const LoginPage = () => {
-  const [formData, setFormData] = useState<LoginInput>({
-    email: '',
-    password: '',
-  });
+const ResetPassword = () => {
+  const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validasi data menggunakan Zod sebelum hit API [cite: 2026-01-12]
-    const validation = loginSchema.safeParse(formData);
-    if (!validation.success) {
-      toast.error(validation.error.issues[0].message);
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const res = await api.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.token);
-      toast.success('Selamat datang kembali! 👋');
-      navigate('/dashboard');
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        // Mapping error message agar lebih manusiawi
+        if (error.message.includes("Password should contain")) {
+          toast.error("Security Policy Violation", {
+            description: "Password wajib kombinasi: Huruf Besar, Angka, dan Simbol.",
+            icon: <AlertCircle className="text-red-500" size={18} />,
+            className: "bg-zinc-900 border-white/5 text-white"
+          });
+        } else if (error.message.includes("New password should be different")) {
+          toast.error("Password Terlalu Identik", {
+            description: "Gunakan password yang berbeda dari sebelumnya demi keamanan.",
+          });
+        } else {
+          toast.error("Gagal Memperbarui", {
+            description: error.message,
+          });
+        }
+      } else {
+        toast.success("Security Key Updated", {
+          description: "Akses Anda telah berhasil diamankan kembali. Silakan login.",
+        });
+        navigate('/login');
+      }
     } catch (err: unknown) {
-      // Type-safe error handling tanpa 'any' [cite: 2026-01-10]
-      const errorMsg = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Gagal login';
-      toast.error(errorMsg);
+      toast.error("System Error", {
+        description: "Terjadi gangguan pada server, silakan coba lagi nanti."
+      });
     } finally {
       setLoading(false);
     }
@@ -59,53 +70,31 @@ const LoginPage = () => {
             transition={{ delay: 0.2 }}
             className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[2rem] flex items-center justify-center mb-6 shadow-[0_20px_40px_rgba(16,185,129,0.25)] border-4 border-white/10"
           >
-            <Wallet className="text-zinc-950" size={36} strokeWidth={2.5} />
+            <ShieldCheck className="text-zinc-950" size={36} strokeWidth={2.5} />
           </motion.div>
-          <h1 className="text-4xl font-black text-white tracking-tighter leading-none italic">
-            BUDGET<span className="text-emerald-500 not-italic">BUDDY</span>
+          <h1 className="text-3xl font-black text-white tracking-tighter italic text-center">
+            UPDATE<span className="text-emerald-500 not-italic">SECURITY</span>
           </h1>
           <div className="mt-3 flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Premium Personal Finance</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Identity Verified</p>
           </div>
         </div>
 
         <div className="bg-zinc-900/40 border border-white/5 p-8 rounded-[3rem] backdrop-blur-3xl shadow-2xl relative overflow-hidden">
-          <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+          <form onSubmit={handleUpdatePassword} className="space-y-6 relative z-10">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 ml-2">Email Access</label>
-              <div className="relative">
-                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                <input
-                  type="email"
-                  placeholder="name@domain.com"
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-5 pl-14 pr-6 text-white text-sm placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 transition-all"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">Secure Key</label>
-                <Link
-                  to="/forgot-password"
-                  className="text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-emerald-500 transition-colors"
-                >
-                  Forgot Key?
-                </Link>
-              </div>
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 ml-2">New Secure Key</label>
               <div className="relative">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="Kombinasi Huruf, Angka & Simbol"
                   className="w-full bg-black/40 border border-white/5 rounded-2xl py-5 pl-14 pr-14 text-white text-sm placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 transition-all"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -128,7 +117,7 @@ const LoginPage = () => {
                   <Loader2 className="animate-spin" size={20} />
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="uppercase tracking-widest text-xs">Authorize Access</span>
+                    <span className="uppercase tracking-widest text-xs">Update Access Key</span>
                     <ArrowRight size={18} strokeWidth={3} />
                   </div>
                 )}
@@ -139,9 +128,8 @@ const LoginPage = () => {
         </div>
 
         <motion.div className="text-center mt-10">
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
-            New User? {' '}
-            <Link to="/register" className="text-emerald-500 ml-1 underline underline-offset-4 decoration-2">Create Account</Link>
+          <p className="text-zinc-600 text-[9px] font-bold uppercase tracking-widest leading-relaxed">
+            By updating your key, all existing sessions <br /> will be re-validated for security. [cite: 2026-01-12]
           </p>
         </motion.div>
       </motion.div>
@@ -149,4 +137,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default ResetPassword;
