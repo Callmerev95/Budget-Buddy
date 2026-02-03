@@ -7,6 +7,7 @@
 
     /* Output Settings */
     "outDir": "./dist",
+    /* rootDir diubah ke ".." agar folder 'shared' dianggap legal di bawah satu root yang sama [cite: 2026-02-03] */
     "rootDir": "..",
     "sourceMap": true,
     "declaration": true,
@@ -35,7 +36,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  /* Masukkan folder shared ke jangkauan kompilasi */
+  /* WAJIB: Masukkan shared/src agar tidak kena error TS6059 [cite: 2026-02-03] */
   "include": ["src/**/*", "../shared/src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts", "dist"]
+  "exclude": ["node_modules", "dist"]
 }
