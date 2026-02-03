@@ -52,11 +52,11 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan project di lingkungan lokal
 
 ### **1. Clone Repository**
 
-```bash
 git clone [https://github.com/username/budget-buddy.git](https://github.com/callmerev95/budget-buddy.git)
 cd budget-buddy
 
 ### 2. Setup Backend (Server)
+
 1. **Masuk ke folder server**: `cd server`
 2. **Install dependensi**: `npm install`
 3. **Duplikat file `.env.example` menjadi `.env`** dan isi kredensial (Database URL, JWT Secret, VAPID Keys).
@@ -64,25 +64,29 @@ cd budget-buddy
 5. **Jalankan server**: `npm run dev`
 
 ### 3. Setup Frontend (Client)
+
 1. **Buka terminal baru dan masuk ke folder client**: `cd client`
 2. **Install dependensi**: `npm install`
 3. **Jalankan aplikasi**: `npm run dev`
 
 ### 4. Web Push Setup (Optional)
+
 Jika ingin mengaktifkan notifikasi:
 
-* **Generate VAPID keys** di folder server: `npx web-push generate-vapid-keys`
-* **Masukkan hasilnya ke `.env` server** dan sesuaikan Public Key di `Dashboard.tsx` pada client.
+- **Generate VAPID keys** di folder server: `npx web-push generate-vapid-keys`
+- **Masukkan hasilnya ke `.env` server** dan sesuaikan Public Key di `Dashboard.tsx` pada client.
 
 ---
 
 ## 📑 Versioning
-* **Current Version**: `v1.0.0-stable`
-* **Next Roadmap**: Implementasi Dark/Light Mode Toggle.
+
+- **Current Version**: `v1.0.0-stable`
+- **Next Roadmap**: Implementasi Dark/Light Mode Toggle.
 
 ## 👨‍💻 Crafted by
-**REV** — *Crafted with passion to help you manage your financial journey.*
+
+**REV** — _Crafted with passion to help you manage your financial journey._
 
 ---
+
 © 2026 Budget Buddy Framework.
-```
