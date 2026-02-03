@@ -11,6 +11,7 @@ import { FixedExpenseList } from '../components/dashboard/FixedExpenseList';
 import { AddTransactionModal } from '../components/dashboard/AddTransactionModal';
 import { AddFixedExpenseModal } from '../components/dashboard/AddFixedExpenseModal';
 import { FinancialPlanModal } from '../components/dashboard/FinancialPlanModal';
+import AboutModal from '../components/modals/AboutModal';
 
 interface Transaction {
   id: string;
@@ -30,9 +31,11 @@ interface FixedExpense {
 
 const Dashboard = () => {
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [dailyLimit, setDailyLimit] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -87,6 +90,7 @@ const Dashboard = () => {
         api.get('/fixed-expenses')
       ]);
       setUserName(userRes.data.name);
+      setUserEmail(userRes.data.email);
       setDailyLimit(Number(userRes.data.dailyLimit) || 0);
       setTransactions(transRes.data);
       setFixedExpenses(fixedRes.data);
@@ -173,14 +177,29 @@ const Dashboard = () => {
 
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-2xl' : 'bg-transparent'}`}>
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
-              {new Date().getHours() < 12 ? '☀️ Selamat Pagi' : '🌙 Selamat Malam'}
-            </p>
-            <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent leading-none">
-              {userName}!
-            </h1>
+          <div className="flex items-center gap-4">
+            {/* Dekorasi Visual Samping Nama (Bukan Button Lagi) */}
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900/80 border border-white/5 flex items-center justify-center shadow-xl shadow-emerald-500/5">
+              <span className="text-zinc-500">
+                {new Date().getHours() < 12 ? '☀️' : '🌙'}
+              </span>
+            </div>
+
+            <div className="space-y-0.5 text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
+                Selamat {new Date().getHours() < 12 ? 'Pagi' : 'Malam'}
+              </p>
+              {/* Trigger Hidden Gem: Klik Nama User untuk buka AboutModal */}
+              <motion.h1
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsAboutOpen(true)}
+                className="text-3xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent leading-none cursor-pointer select-none active:opacity-70 transition-all"
+              >
+                {userName}!
+              </motion.h1>
+            </div>
           </div>
+
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
@@ -208,7 +227,6 @@ const Dashboard = () => {
             <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
           </section>
 
-          {/* Ringkasan Tagihan & Saldo Tersimpan [cite: 2026-02-03] */}
           <section className="-mt-4">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -279,7 +297,6 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* Navigasi Grounded Floating [cite: 2026-02-03] */}
       <nav className="fixed bottom-0 left-0 right-0 h-24 bg-zinc-900/80 backdrop-blur-3xl border-t border-white/5 rounded-t-[2.5rem] flex justify-between items-center px-12 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6">
         <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
           <Home size={24} strokeWidth={2.5} />
@@ -302,6 +319,13 @@ const Dashboard = () => {
           <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
         </button>
       </nav>
+
+      {/* MODALS SECTION */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        userEmail={userEmail}
+      />
 
       <FixedExpenseList
         isOpen={isListModalOpen}

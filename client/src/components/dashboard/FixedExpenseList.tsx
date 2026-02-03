@@ -57,7 +57,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
             <div className="flex justify-between items-center mb-8 px-2">
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">Daftar Tagihan</h2>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Jangan sampai telat! 🚀</p>
+                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Jangan sampai telat! </p>
               </div>
               <button
                 onClick={onClose}
@@ -82,8 +82,8 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
                       key={item.id}
                       variants={itemAnim}
                       className={`p-5 rounded-[2rem] border transition-all duration-500 relative overflow-hidden group ${isDueSoon
-                          ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_10px_30px_rgba(245,158,11,0.1)]'
-                          : 'bg-zinc-950/50 border-white/5'
+                        ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_10px_30px_rgba(245,158,11,0.1)]'
+                        : 'bg-zinc-950/50 border-white/5'
                         }`}
                     >
                       <div className="flex items-center justify-between relative z-10">
