@@ -32,6 +32,7 @@ Project ini menggunakan arsitektur Monorepo yang terbagi menjadi `client`, `serv
 
 ## ✨ Key Features
 
+- **Progressive Web App (PWA)**: Aplikasi dapat di-instal langsung di homescreen Android maupun iOS tanpa melalui App Store, lengkap dengan dukungan offline.
 - **Smart Daily Allowance**: Kalkulasi jatah jajan harian otomatis berdasarkan sisa saldo dan rencana keuangan bulanan.
 - **Fixed Expense Control**: Manajemen pengeluaran tetap untuk memastikan tagihan rutin selalu terkontrol.
 - **Live Analytics**: Visualisasi grafik keuangan yang interaktif menggunakan Recharts.
@@ -52,7 +53,7 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan project di lingkungan lokal
 
 ### **1. Clone Repository**
 
-git clone [https://github.com/username/budget-buddy.git](https://github.com/callmerev95/budget-buddy.git)
+git clone [https://github.com/callmerev95/budget-buddy.git]
 cd budget-buddy
 
 ### 2. Setup Backend (Server)
