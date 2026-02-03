@@ -7,7 +7,7 @@
 
     /* Output Settings */
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "..",
     "sourceMap": true,
     "declaration": true,
     "removeComments": true,

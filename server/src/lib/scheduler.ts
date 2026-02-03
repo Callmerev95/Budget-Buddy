@@ -13,28 +13,28 @@ cron.schedule("0 8 * * *", async () => {
   const currentYear = now.getFullYear();
 
   try {
-    // 1. Ambil semua tagihan yang jatuh tempo pada tanggal hari ini 
+    // 1. Ambil semua tagihan yang jatuh tempo pada tanggal hari ini
     const dueExpenses = await prisma.fixedExpense.findMany({
       where: { dueDate: todayDate },
       include: { user: true },
     });
 
     for (const expense of dueExpenses) {
-      // 2. Cek riwayat transaksi: Cari apakah tagihan ini sudah dibayar bulan ini 
+      // 2. Cek riwayat transaksi: Cari apakah tagihan ini sudah dibayar bulan ini
       const alreadyPaid = await prisma.dailyLog.findFirst({
         where: {
           userId: expense.userId,
-          // Mencari kecocokan deskripsi (misal: "WiFi" dalam "Pembayaran WiFi") 
+          // Mencari kecocokan deskripsi (misal: "WiFi" dalam "Pembayaran WiFi")
           description: { contains: expense.name, mode: "insensitive" },
-          createdAt: {
-            gte: new Date(currentYear, currentMonth, 1), // Mulai dari tanggal 1 bulan ini 
+          date: {
+            gte: new Date(currentYear, currentMonth, 1), // Mulai dari tanggal 1 bulan ini
           },
         },
       });
 
-      // 3. Hanya kirim notifikasi jika belum ada catatan pembayaran di bulan ini 
+      // 3. Hanya kirim notifikasi jika belum ada catatan pembayaran di bulan ini
       if (!alreadyPaid) {
-        // Gunakan Format Judul Spesifik agar Unique Tagging di Service Worker bekerja 
+        // Gunakan Format Judul Spesifik agar Unique Tagging di Service Worker bekerja
         await sendPushNotification(
           expense.userId,
           `Tagihan: ${expense.name} 🔔`,
