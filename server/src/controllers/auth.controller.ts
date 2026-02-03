@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
-import { registerSchema } from "@shared/schemas/auth.schema.js";
+import { registerSchema } from "../../../shared/src/schemas/auth.schema.js";
 import webpush from "../lib/webpush.js";
 import { supabase } from "../lib/supabase.js";
 
