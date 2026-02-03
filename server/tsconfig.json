@@ -31,7 +31,7 @@
     },
 
     /* Membungkam warning deprecation TS 5.x/6.x */
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
 
     /* Interop & Miscellaneous */
     "esModuleInterop": true,

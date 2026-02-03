@@ -1,59 +1,96 @@
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
 import { registerSchema } from "../../../shared/src/schemas/auth.schema.js";
-import webpush from "../lib/webpush.js"; // Import yang baru kita buat
+import webpush from "../lib/webpush.js";
+import { supabase } from "../lib/supabase.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
+
     const existingUser = await prisma.user.findUnique({
       where: { email: validatedData.email },
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: "Email sudah dipakai, bro!" });
+      return res.status(400).json({
+        message:
+          "Email ini sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.",
+      });
     }
 
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+    const { data: sbData, error: sbError } = await supabase.auth.signUp({
+      email: validatedData.email,
+      password: validatedData.password,
+      options: {
+        data: { full_name: validatedData.name },
+      },
+    });
+
+    if (sbError) {
+      return res.status(400).json({ message: sbError.message });
+    }
+
     const newUser = await prisma.user.create({
       data: {
         email: validatedData.email,
-        password: hashedPassword,
         name: validatedData.name,
+        supabase_id: sbData.user?.id,
       },
     });
 
     return res.status(201).json({
-      message: "User berhasil terdaftar! 🚀",
+      message:
+        "Registrasi berhasil. Silakan periksa inbox email Anda untuk melakukan verifikasi akun.",
       userId: newUser.id,
     });
-  } catch (error: any) {
-    if (error.name === "ZodError") {
-      return res.status(400).json({ errors: error.errors });
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "ZodError"
+    ) {
+      return res.status(400).json({ errors: (error as any).errors });
     }
     console.error("Register Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message:
+        "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.",
+    });
   }
 };
 
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+
+    const { error: sbError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (sbError) {
+      // Satpam profesional: membedakan error verifikasi dengan kredensial salah [cite: 2026-02-03]
+      if (sbError.message.includes("Email not confirmed")) {
+        return res.status(401).json({
+          message:
+            "Akun Anda belum terverifikasi. Silakan periksa email Anda untuk mengaktifkan akun.",
+        });
+      }
+      return res.status(401).json({
+        message:
+          "Email atau kata sandi yang Anda masukkan salah. Silakan coba lagi.",
+      });
+    }
+
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       return res
-        .status(401)
-        .json({ message: "Email atau password salah, bro!" });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ message: "Email atau password salah, bro!" });
+        .status(404)
+        .json({ message: "Data pengguna tidak ditemukan." });
     }
 
     const token = jwt.sign(
@@ -63,9 +100,8 @@ export const login = async (req: Request, res: Response) => {
     );
 
     return res.status(200).json({
-      message: "Login berhasil! 🔑",
+      message: "Selamat datang kembali! Anda berhasil masuk.",
       token,
-      // Sertakan dailyLimit saat login agar frontend langsung sinkron [cite: 2026-01-14]
       user: {
         id: user.id,
         name: user.name,
@@ -73,9 +109,38 @@ export const login = async (req: Request, res: Response) => {
         dailyLimit: user.dailyLimit,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Login Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ message: "Terjadi kesalahan sistem saat mencoba masuk." });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Panggil Supabase untuk kirim email reset password [cite: 2026-02-03]
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "http://localhost:5173/reset-password", // Sesuaikan URL frontend lu [cite: 2026-02-03]
+    });
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return res.status(200).json({
+      message:
+        "Instruksi pemulihan kata sandi telah dikirim ke email Anda. Silakan periksa inbox Anda.",
+    });
+  } catch (error: unknown) {
+    console.error("Forgot Password Error:", error);
+    return res
+      .status(500)
+      .json({
+        message: "Terjadi kesalahan sistem saat memproses permintaan Anda.",
+      });
   }
 };
 
@@ -83,7 +148,7 @@ export const getMe = async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      // Menambahkan dailyLimit ke dalam select agar dikirim ke frontend [cite: 2026-01-14]
+
       select: {
         id: true,
         name: true,

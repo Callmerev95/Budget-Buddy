@@ -7,19 +7,22 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  password      String
-  name          String
-  dailyLimit    Float          @default(0)
-  monthlyIncome   Float          @default(0)
-  savingsTarget   Float          @default(0)
-  isPercentTarget Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  logs          DailyLog[]
-  fixedExpenses FixedExpense[]
-  pushSubscription String?  
+  id               String         @id @default(uuid())
+  email            String         @unique
+  // Password dibuat opsional karena kedepannya dihandle Supabase [cite: 2026-02-03]
+  password         String?
+  name             String
+  // Tambahkan supabase_id untuk sinkronisasi Auth Hybrid kita [cite: 2026-01-12]
+  supabase_id      String?        @unique 
+  dailyLimit       Float          @default(0)
+  monthlyIncome    Float          @default(0)
+  savingsTarget    Float          @default(0)
+  isPercentTarget  Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  logs             DailyLog[]
+  fixedExpenses    FixedExpense[]
+  pushSubscription String?
 }
 
 model DailyLog {
