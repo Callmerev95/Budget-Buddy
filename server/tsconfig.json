@@ -25,13 +25,11 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Alias untuk Shared Folder (Penting: Tambahkan baseUrl) */
-    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/src/*"]
     },
 
     /* Membungkam warning deprecation TS 5.x/6.x */
-    "ignoreDeprecations": "6.0",
 
     /* Interop & Miscellaneous */
     "esModuleInterop": true,
