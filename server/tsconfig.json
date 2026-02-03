@@ -38,6 +38,6 @@
     "isolatedModules": true
   },
   /* Pastikan folder shared masuk dalam jangkauan kompilasi */
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "./../shared/src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts", "dist"]
 }
