@@ -56,6 +56,17 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [scrolled, setScrolled] = useState(false);
 
+  // Logic Sapaan Dinamis [cite: 2026-02-03]
+  const getTimeDetail = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) return { label: "Pagi", icon: "🌅" };
+    if (hour >= 11 && hour < 15) return { label: "Siang", icon: "☀️" };
+    if (hour >= 15 && hour < 18) return { label: "Sore", icon: "🌇" };
+    return { label: "Malam", icon: "🌙" };
+  };
+
+  const timeDetail = getTimeDetail();
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 15);
@@ -178,18 +189,16 @@ const Dashboard = () => {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-2xl' : 'bg-transparent'}`}>
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Dekorasi Visual Samping Nama (Bukan Button Lagi) */}
             <div className="w-12 h-12 rounded-2xl bg-zinc-900/80 border border-white/5 flex items-center justify-center shadow-xl shadow-emerald-500/5">
-              <span className="text-zinc-500">
-                {new Date().getHours() < 12 ? '☀️' : '🌙'}
+              <span className="text-xl">
+                {timeDetail.icon} {/* Update Icon Dinamis [cite: 2026-02-03] */}
               </span>
             </div>
 
             <div className="space-y-0.5 text-left">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
-                Selamat {new Date().getHours() < 12 ? 'Pagi' : 'Malam'}
+                Selamat {timeDetail.label} {/* Update Teks Sapaan [cite: 2026-02-03] */}
               </p>
-              {/* Trigger Hidden Gem: Klik Nama User untuk buka AboutModal */}
               <motion.h1
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsAboutOpen(true)}
