@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    /* Aktifkan ini agar tidak deprecated [cite: 2026-02-03] */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    /* Ganti ke Bundler agar kompatibel dengan Vite modern [cite: 2026-02-03] */
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Hapus baseUrl, langsung pake path relatif di bawah ini [cite: 2026-02-03] */
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/src/*"],
+      "zod": ["./node_modules/zod"]
+    }
+  },
+  "include": ["src", "../shared/src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
