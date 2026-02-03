@@ -1,372 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, PieChart, Plus, AlertCircle, Calendar, LogOut, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Home, PieChart, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api';
 import { toast } from 'sonner';
+
+// Components
 import { BalanceCard } from '../components/dashboard/BalanceCard';
-import { SummaryGrid } from '../components/dashboard/SummaryGrid';
-import { TransactionList } from '../components/dashboard/TransactionList';
 import { FixedExpenseList } from '../components/dashboard/FixedExpenseList';
 import { AddTransactionModal } from '../components/dashboard/AddTransactionModal';
 import { AddFixedExpenseModal } from '../components/dashboard/AddFixedExpenseModal';
 import { FinancialPlanModal } from '../components/dashboard/FinancialPlanModal';
 import AboutModal from '../components/modals/AboutModal';
-
-interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  createdAt?: string;
-  date?: string;
-}
-
-interface FixedExpense {
-  id: string;
-  name: string;
-  amount: number;
-  dueDate: number;
-}
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { QuickActions } from '../components/dashboard/QuickActions';
+import { SummarySection } from '../components/dashboard/SummarySection';
+import { ActivitySection } from '../components/dashboard/ActivitySection';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Data States
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [dailyLimit, setDailyLimit] = useState(0);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [userData, setUserData] = useState({
-    monthlyIncome: 0,
-    savingsTarget: 0,
-    isPercentTarget: false
-  });
-
-  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
-  const [isFixedModalOpen, setIsFixedModalOpen] = useState(false);
-  const [isListModalOpen, setIsListModalOpen] = useState(false);
-
-  const [fixedData, setFixedData] = useState({ name: '', amount: '', dueDate: '1' });
+  const [transactions, setTransactions] = useState([]);
+  const [fixedExpenses, setFixedExpenses] = useState([]);
+  const [userData, setUserData] = useState({ monthlyIncome: 0, savingsTarget: 0, isPercentTarget: false });
   const [formData, setFormData] = useState({ description: '', amount: '', category: 'Makan & Minum' });
-
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Logic Sapaan Dinamis [cite: 2026-02-03]
-  const getTimeDetail = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) return { label: "Pagi", icon: "🌅" };
-    if (hour >= 11 && hour < 15) return { label: "Siang", icon: "☀️" };
-    if (hour >= 15 && hour < 18) return { label: "Sore", icon: "🌇" };
-    return { label: "Malam", icon: "🌙" };
-  };
-
-  const timeDetail = getTimeDetail();
+  const [fixedData, setFixedData] = useState({ name: '', amount: '', dueDate: '1' });
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 15);
+      window.requestAnimationFrame(() => setScrolled(window.scrollY > 15));
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const setupNotifications = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      if (Notification.permission === 'default') await Notification.requestPermission();
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription && Notification.permission === 'granted') {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: 'BCOnabemphnHRb2QkI-q6xeeehSk0F-mmharx8sLeAJ2LWEn-0HIR4nRlUilHY5rClK2TBoAhV0IfH-lKdqdhzA'
-        });
-      }
-      if (subscription) await api.post('/auth/subscribe', subscription);
-    } catch (err) {
-      console.error('Push notification setup failed:', err);
-    }
-  };
-
   const fetchData = async () => {
     try {
-      const [userRes, transRes, fixedRes] = await Promise.all([
-        api.get('/auth/me'),
-        api.get('/transactions'),
-        api.get('/fixed-expenses')
-      ]);
-      setUserName(userRes.data.name);
-      setUserEmail(userRes.data.email);
-      setDailyLimit(Number(userRes.data.dailyLimit) || 0);
-      setTransactions(transRes.data);
-      setFixedExpenses(fixedRes.data);
-      setUserData({
-        monthlyIncome: userRes.data.monthlyIncome || 0,
-        savingsTarget: userRes.data.savingsTarget || 0,
-        isPercentTarget: userRes.data.isPercentTarget || false,
-      });
-    } catch (err) {
-      toast.error("Gagal sinkronisasi data");
-    }
+      const [u, t, f] = await Promise.all([api.get('/auth/me'), api.get('/transactions'), api.get('/fixed-expenses')]);
+      setUserName(u.data.name); setUserEmail(u.data.email); setDailyLimit(Number(u.data.dailyLimit) || 0);
+      setTransactions(t.data); setFixedExpenses(f.data);
+      setUserData({ monthlyIncome: u.data.monthlyIncome || 0, savingsTarget: u.data.savingsTarget || 0, isPercentTarget: u.data.isPercentTarget || false });
+    } catch (err) { toast.error("Gagal sinkronisasi data"); }
   };
 
   useEffect(() => {
     fetchData();
-    setupNotifications();
+    // Notif logic (simplified call)
+    (async () => {
+      if (!('serviceWorker' in navigator)) return;
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      let sub = await reg.pushManager.getSubscription();
+      if (sub) await api.post('/auth/subscribe', sub);
+    })();
   }, []);
 
-  const handleDeleteTransaction = async (id: string) => {
-    const originalTransactions = [...transactions];
-    try {
-      setTransactions(prev => prev.filter(t => t.id !== id));
-      await api.delete(`/transactions/${id}`);
-      toast.success('Transaksi berhasil dihapus');
-      fetchData();
-    } catch (err) {
-      setTransactions(originalTransactions);
-      toast.error('Gagal menghapus transaksi dari server');
-    }
-  };
-
-  const handleSavePlan = async (data: any) => {
-    setLoading(true);
-    try {
-      await api.patch('/auth/financial-plan', data);
-      toast.success('Rencana keuangan diterapkan!');
-      setIsPlanModalOpen(false);
-      await fetchData();
-    } catch (err) {
-      toast.error('Gagal menyimpan rencana');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await api.post('/transactions', formData);
-      setIsModalOpen(false);
-      setFormData({ description: '', amount: '', category: 'Makan & Minum' });
-      await fetchData();
-      toast.success('Transaksi disimpan!');
-    } catch (err) {
-      toast.error('Gagal menyimpan transaksi');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const spentToday = transactions
-    .filter((t: Transaction) => (t.createdAt || t.date || "").startsWith(todayStr))
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const filteredActivities = transactions.filter((t: Transaction) =>
-    (t.createdAt || t.date || "").startsWith(selectedDate)
-  );
-
-  const totalFixed = fixedExpenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const totalSpentAllTime = transactions.reduce((acc, curr) => acc + curr.amount, 0);
-  const savingsAmount = userData.isPercentTarget
-    ? (userData.monthlyIncome * userData.savingsTarget) / 100
-    : userData.savingsTarget;
-
-  const remainingLimit = dailyLimit - spentToday;
-  const monthlyBudgetFree = userData.monthlyIncome - savingsAmount - totalSpentAllTime - totalFixed;
-  const usagePercentage = dailyLimit > 0 ? (spentToday / dailyLimit) * 100 : 0;
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const spentToday = transactions.filter((t: any) => (t.createdAt || t.date || "").startsWith(today)).reduce((a, c: any) => a + c.amount, 0);
+    const totalFixed = fixedExpenses.reduce((a, c: any) => a + Number(c.amount), 0);
+    const savings = userData.isPercentTarget ? (userData.monthlyIncome * userData.savingsTarget) / 100 : userData.savingsTarget;
+    return {
+      spentToday, totalFixed, remainingLimit: dailyLimit - spentToday,
+      monthlyBudgetFree: userData.monthlyIncome - savings - transactions.reduce((a, c: any) => a + c.amount, 0) - totalFixed,
+      usagePercentage: dailyLimit > 0 ? (spentToday / dailyLimit) * 100 : 0
+    };
+  }, [transactions, fixedExpenses, dailyLimit, userData]);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-44 font-sans selection:bg-emerald-500/30">
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
+    <div className="min-h-screen bg-[#050505] text-white pb-44 font-sans overflow-x-hidden">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-emerald-500/5 blur-[80px] pointer-events-none z-0 transform-gpu" />
 
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-6 pt-12 pb-6 ${scrolled ? 'bg-[#050505]/60 backdrop-blur-[32px] shadow-2xl' : 'bg-transparent'}`}>
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-900/80 border border-white/5 flex items-center justify-center shadow-xl shadow-emerald-500/5">
-              <span className="text-xl">
-                {timeDetail.icon} {/* Update Icon Dinamis [cite: 2026-02-03] */}
-              </span>
-            </div>
-
-            <div className="space-y-0.5 text-left">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
-                Selamat {timeDetail.label} {/* Update Teks Sapaan [cite: 2026-02-03] */}
-              </p>
-              <motion.h1
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsAboutOpen(true)}
-                className="text-3xl font-black tracking-tighter bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent leading-none cursor-pointer select-none active:opacity-70 transition-all"
-              >
-                {userName}!
-              </motion.h1>
-            </div>
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-            className="w-12 h-12 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500 active:bg-zinc-800 transition-all"
-          >
-            <LogOut size={20} strokeWidth={2.5} />
-          </motion.button>
-        </div>
-      </header>
+      <DashboardHeader userName={userName} scrolled={scrolled} onAboutOpen={() => setActiveModal('about')} onLogout={() => { localStorage.removeItem('token'); navigate('/login'); }} />
 
       <div className="h-32" />
 
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 max-w-md mx-auto relative z-10">
-        <BalanceCard remainingLimit={remainingLimit} usagePercentage={usagePercentage} dailyLimit={dailyLimit} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 max-w-md mx-auto relative z-10 transform-gpu">
+        <BalanceCard remainingLimit={stats.remainingLimit} usagePercentage={stats.usagePercentage} dailyLimit={dailyLimit} />
 
         <div className="mt-10 space-y-10">
-          <section>
-            <div className="flex items-center gap-3 mb-6 px-1">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400">Ringkasan</h3>
-              </div>
-              <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent" />
-            </div>
-            <SummaryGrid dailyLimit={dailyLimit} totalSpent={spentToday} onEditLimit={() => setIsPlanModalOpen(true)} />
-          </section>
-
-          <section className="-mt-4">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-zinc-900/30 backdrop-blur-2xl border border-white/5 rounded-[2.25rem] p-4 flex items-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]"
-            >
-              <button
-                onClick={() => setIsListModalOpen(true)}
-                className="flex-1 flex items-center gap-3 px-2 relative active:scale-95 transition-transform"
-              >
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${totalFixed > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-500'}`}>
-                  <AlertCircle size={18} strokeWidth={2.5} />
-                </div>
-                <div className="text-left">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Tagihan Bulanan</p>
-                  <p className={`text-sm font-black tracking-tight ${totalFixed > 0 ? 'text-amber-500/90' : 'text-zinc-600'}`}>
-                    {totalFixed > 0 ? `Rp ${totalFixed.toLocaleString('id-ID')}` : 'Belum Ada'}
-                  </p>
-                </div>
-                <ChevronRight size={12} className="absolute top-0 right-0 text-zinc-700" />
-              </button>
-
-              <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-zinc-800 to-transparent mx-2" />
-
-              <div className="flex-1 flex items-center gap-3 px-2">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${monthlyBudgetFree < 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                  <PieChart size={18} strokeWidth={2.5} />
-                </div>
-                <div className="text-left">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-0.5">Saldo Tersimpan</p>
-                  <p className={`text-sm font-black tracking-tight ${monthlyBudgetFree < 0 ? 'text-rose-500/90' : 'text-emerald-500/90'}`}>
-                    Rp {monthlyBudgetFree.toLocaleString('id-ID')}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </section>
-
-          <section>
-            <div className="flex items-center justify-between mb-6 px-1">
-              <div className="flex items-center gap-2 flex-grow">
-                <div className="w-1 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <h3 className="text-xs font-black tracking-[0.3em] uppercase text-zinc-400 whitespace-nowrap">
-                  Aktivitas
-                </h3>
-                <div className="h-[1px] flex-grow bg-gradient-to-r from-zinc-800 to-transparent ml-2" />
-              </div>
-
-              <motion.div
-                whileTap={{ scale: 0.95, backgroundColor: "rgba(39, 39, 42, 0.8)" }}
-                className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-xl px-3 py-1.5 transition-colors cursor-pointer ml-4 shadow-sm"
-              >
-                <Calendar size={12} className="text-emerald-500" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-emerald-500 text-[9px] font-black focus:outline-none uppercase cursor-pointer tracking-tighter"
-                />
-              </motion.div>
-            </div>
-
-            <TransactionList
-              transactions={filteredActivities}
-              onDelete={handleDeleteTransaction}
-            />
-          </section>
+          <SummarySection dailyLimit={dailyLimit} spentToday={stats.spentToday} onEdit={() => setActiveModal('plan')} />
+          <QuickActions totalFixed={stats.totalFixed} monthlyBudgetFree={stats.monthlyBudgetFree} onListOpen={() => setActiveModal('fixedList')} />
+          <ActivitySection
+            selectedDate={selectedDate} onDateChange={setSelectedDate}
+            transactions={transactions.filter((t: any) => (t.createdAt || t.date || "").startsWith(selectedDate))}
+            onDelete={async (id) => { await api.delete(`/transactions/${id}`); fetchData(); }}
+          />
         </div>
       </motion.div>
 
-      <nav className="fixed bottom-0 left-0 right-0 h-24 bg-zinc-900/80 backdrop-blur-3xl border-t border-white/5 rounded-t-[2.5rem] flex justify-between items-center px-12 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6">
-        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 active:scale-90 transition-transform">
-          <Home size={24} strokeWidth={2.5} />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span>
-        </button>
-
+      <nav className="fixed bottom-0 left-0 right-0 h-24 bg-zinc-900/80 backdrop-blur-3xl border-t border-white/5 rounded-t-[2.5rem] flex justify-between items-center px-12 z-50 pb-6 transform-gpu">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-emerald-500 active:scale-90"><Home size={24} strokeWidth={2.5} /><span className="text-[9px] font-black mt-1 uppercase tracking-widest">Home</span></button>
         <div className="relative -mt-16">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] shadow-[0_15px_30px_rgba(16,185,129,0.4)] border-4 border-[#050505] relative z-20"
-          >
-            <Plus size={32} strokeWidth={3.5} />
-          </motion.button>
+          <motion.button whileTap={{ scale: 0.95 }} onClick={() => setActiveModal('addTrans')} className="bg-emerald-500 text-zinc-950 p-5 rounded-[2.2rem] border-4 border-[#050505] shadow-lg"><Plus size={32} strokeWidth={3.5} /></motion.button>
           <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 -z-10" />
         </div>
-
-        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 active:scale-90 transition-transform">
-          <PieChart size={24} strokeWidth={2.5} />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span>
-        </button>
+        <button onClick={() => navigate('/reports')} className="flex flex-col items-center text-zinc-500 active:scale-90"><PieChart size={24} strokeWidth={2.5} /><span className="text-[9px] font-black mt-1 uppercase tracking-widest">Laporan</span></button>
       </nav>
 
-      {/* MODALS SECTION */}
-      <AboutModal
-        isOpen={isAboutOpen}
-        onClose={() => setIsAboutOpen(false)}
-        userEmail={userEmail}
-      />
-
-      <FixedExpenseList
-        isOpen={isListModalOpen}
-        onClose={() => setIsListModalOpen(false)}
-        expenses={fixedExpenses}
-        onDelete={async (id) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }}
-        onPay={async (expense) => { await api.post('/transactions', { description: `Bayar: ${expense.name}`, amount: expense.amount, category: 'Tagihan' }); fetchData(); }}
-        onAddClick={() => { setIsListModalOpen(false); setIsFixedModalOpen(true); }}
-      />
-      <AddTransactionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        loading={loading}
-      />
-      <AddFixedExpenseModal
-        isOpen={isFixedModalOpen}
-        onClose={() => setIsFixedModalOpen(false)}
-        onSubmit={async (e) => { e.preventDefault(); await api.post('/fixed-expenses', fixedData); setIsFixedModalOpen(false); fetchData(); }}
-        fixedData={fixedData}
-        setFixedData={setFixedData}
-        loading={loading}
-      />
-      <FinancialPlanModal
-        isOpen={isPlanModalOpen}
-        onClose={() => setIsPlanModalOpen(false)}
-        onSave={handleSavePlan}
-        initialData={userData}
-        totalFixed={totalFixed}
-      />
+      <AnimatePresence>
+        {activeModal === 'about' && <AboutModal isOpen onClose={() => setActiveModal(null)} userEmail={userEmail} />}
+        {activeModal === 'fixedList' && <FixedExpenseList isOpen expenses={fixedExpenses} onClose={() => setActiveModal(null)} onDelete={async (id) => { await api.delete(`/fixed-expenses/${id}`); fetchData(); }} onPay={async (ex) => { await api.post('/transactions', { description: `Bayar: ${ex.name}`, amount: ex.amount, category: 'Tagihan' }); fetchData(); }} onAddClick={() => setActiveModal('addFixed')} />}
+        {activeModal === 'addTrans' && <AddTransactionModal isOpen onClose={() => setActiveModal(null)} formData={formData} setFormData={setFormData} loading={loading} onSubmit={async (e) => { e.preventDefault(); await api.post('/transactions', formData); setActiveModal(null); fetchData(); }} />}
+        {activeModal === 'addFixed' && <AddFixedExpenseModal isOpen onClose={() => setActiveModal(null)} fixedData={fixedData} setFixedData={setFixedData} loading={loading} onSubmit={async (e) => { e.preventDefault(); await api.post('/fixed-expenses', fixedData); setActiveModal(null); fetchData(); }} />}
+        {activeModal === 'plan' && <FinancialPlanModal isOpen onClose={() => setActiveModal(null)} initialData={userData} totalFixed={stats.totalFixed} onSave={async (d) => { await api.patch('/auth/financial-plan', d); setActiveModal(null); fetchData(); }} />}
+      </AnimatePresence>
     </div>
   );
 };
