@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "description": "**BudgetBuddy** adalah aplikasi manajemen keuangan personal berbasis SaaS yang membantu user mengelola jatah jajan harian secara cerdas.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "npm run dev --prefix server",
-    "client": "npm run dev --prefix client"
+    "client": "npm run dev --prefix client",
+    "build:shared": "cd shared && npm install",
+    "build:server": "cd server && npm install && npx prisma generate && npm run build",
+    "build": "npm run build:shared && npm run build:server"
   },
   "repository": {
     "type": "git",
@@ -15,7 +19,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "bugs": {
     "url": "https://github.com/Callmerev95/Budget-Buddy/issues"
   },

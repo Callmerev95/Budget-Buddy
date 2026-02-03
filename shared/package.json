@@ -12,6 +12,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.76"
   }
 }
