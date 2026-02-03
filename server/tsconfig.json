@@ -7,7 +7,6 @@
 
     /* Output Settings */
     "outDir": "./dist",
-    /* rootDir diatur ke ".." agar folder 'shared' dianggap legal di bawah satu root yang sama [cite: 2026-02-03] */
     "rootDir": "..",
     "sourceMap": true,
     "declaration": true,
