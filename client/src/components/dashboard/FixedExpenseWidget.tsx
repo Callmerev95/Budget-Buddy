@@ -1,3 +1,4 @@
+import React, { memo } from 'react'; // 1. Tambah memo
 import { ReceiptText, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -6,11 +7,13 @@ interface FixedExpenseWidgetProps {
   onOpen: () => void;
 }
 
-export const FixedExpenseWidget = ({ totalFixed, onOpen }: FixedExpenseWidgetProps) => (
+// 2. Bungkus dengan memo agar tidak re-render saat Dashboard re-render (misal saat scroll)
+export const FixedExpenseWidget = memo(({ totalFixed, onOpen }: FixedExpenseWidgetProps) => (
   <motion.button
     whileTap={{ scale: 0.97 }}
     onClick={onOpen}
-    className="w-full relative overflow-hidden bg-zinc-900/40 border border-white/5 p-6 rounded-[2rem] mb-10 flex items-center justify-between backdrop-blur-md group"
+    // Tambah transform-gpu buat optimasi backdrop-blur dan animasi scale
+    className="w-full relative overflow-hidden bg-zinc-900/40 border border-white/5 p-6 rounded-[2rem] mb-10 flex items-center justify-between backdrop-blur-md group transform-gpu"
   >
     {/* Dekorasi Light Beam */}
     <div className="absolute top-0 left-0 w-24 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"></div>
@@ -39,4 +42,4 @@ export const FixedExpenseWidget = ({ totalFixed, onOpen }: FixedExpenseWidgetPro
     {/* Subtle Background Glow */}
     <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all"></div>
   </motion.button>
-);
+));

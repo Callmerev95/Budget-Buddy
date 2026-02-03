@@ -1,3 +1,4 @@
+import React, { memo } from 'react'; // 1. Tambah memo
 import { Edit3, ArrowDownCircle, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -8,24 +9,26 @@ interface SummaryGridProps {
   onEditLimit: () => void;
 }
 
-export const SummaryGrid = ({ dailyLimit, totalSpent, onEditLimit }: SummaryGridProps) => {
+// 2. Bungkus dengan memo agar grid statis ini tidak re-render saat list transaksi di bawahnya update
+export const SummaryGrid = memo(({ dailyLimit, totalSpent, onEditLimit }: SummaryGridProps) => {
   return (
-    <div className="grid grid-cols-2 gap-4 mb-8">
-      {/* CARD LIMIT HARIAN - Mobile Optimized [cite: 2026-01-12, 2026-01-14] */}
+    <div className="grid grid-cols-2 gap-4 mb-8 transform-gpu"> {/* Gunakan GPU layer untuk grid container */}
+
+      {/* CARD LIMIT HARIAN - Mobile Optimized */}
       <motion.button
-        whileTap={{ scale: 0.96 }} // Fokus pada feedback saat ditekan
+        whileTap={{ scale: 0.96 }}
         onClick={onEditLimit}
-        className="relative overflow-hidden group active:brightness-90 transition-all"
+        // Pakai transform-gpu agar scaling animasi tidak buram/pecah
+        className="relative overflow-hidden group active:brightness-90 transition-all transform-gpu"
       >
         <div className="bg-zinc-900/40 p-5 rounded-[2.25rem] border border-white/5 backdrop-blur-xl text-left shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-          {/* Inner Glow Decorative Tetap Ada untuk Estetika [cite: 2026-01-12] */}
+          {/* Inner Glow Decorative */}
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
           <div className="flex justify-between items-start mb-4">
             <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
               <Edit3 size={18} strokeWidth={2.5} />
             </div>
-            {/* Chevron dibuat tetap terlihat tipis agar user tahu ini bisa diklik [cite: 2026-01-14] */}
             <div className="p-1 opacity-40">
               <ChevronRight size={14} className="text-emerald-500" />
             </div>
@@ -41,13 +44,12 @@ export const SummaryGrid = ({ dailyLimit, totalSpent, onEditLimit }: SummaryGrid
             </div>
           </div>
 
-          {/* Aura statis yang subtle tanpa trigger hover [cite: 2026-01-12] */}
           <div className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-500/5 rounded-full blur-2xl" />
         </div>
       </motion.button>
 
-      {/* CARD TERPAKAI - Mobile Optimized [cite: 2026-01-12, 2026-01-14] */}
-      <div className="relative overflow-hidden">
+      {/* CARD TERPAKAI - Mobile Optimized */}
+      <div className="relative overflow-hidden transform-gpu">
         <div className="bg-zinc-900/40 p-5 rounded-[2.25rem] border border-white/5 backdrop-blur-xl text-left shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-rose-500/10 to-transparent" />
 
@@ -65,9 +67,10 @@ export const SummaryGrid = ({ dailyLimit, totalSpent, onEditLimit }: SummaryGrid
             </div>
           </div>
 
+          {/* Blur-3xl sangat berat, transform-gpu wajib di sini */}
           <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-rose-500/5 rounded-full blur-3xl" />
         </div>
       </div>
     </div>
   );
-};
+});

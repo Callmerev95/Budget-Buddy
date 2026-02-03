@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { memo } from 'react'; // 1. Tambah memo
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // 2. Tambah Variants
 import { Wallet, X, ShieldCheck, Cpu, Globe } from 'lucide-react';
 
 interface AboutModalProps {
@@ -8,34 +8,60 @@ interface AboutModalProps {
   userEmail?: string;
 }
 
-const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, userEmail }) => {
+// 3. Bungkus dengan memo
+const AboutModal: React.FC<AboutModalProps> = memo(({ isOpen, onClose, userEmail }) => {
+
+  // Explicitly typing variants to keep TypeScript happy
+  const modalVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.9, y: 20 },
+    show: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { type: "tween", ease: "easeOut", duration: 0.3 }
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.9,
+      y: 20,
+      transition: { duration: 0.2 }
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
+          {/* Backdrop Blur Premium */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
+            className="absolute inset-0 bg-black/90 backdrop-blur-2xl transform-gpu"
           />
 
+          {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-sm bg-zinc-900 border border-white/5 rounded-[40px] shadow-2xl overflow-hidden"
+            variants={modalVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            className="relative w-full max-w-sm bg-zinc-900 border border-white/5 rounded-[40px] shadow-2xl overflow-hidden transform-gpu"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-zinc-500 hover:text-white transition-colors">
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-zinc-500 hover:text-white transition-colors active:scale-90"
+            >
               <X size={16} />
             </button>
 
             <div className="p-8 pt-12">
               {/* Header: Logo & Branding */}
               <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-emerald-500/10 rounded-[28px] flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-inner">
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-[28px] flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-inner transform-gpu">
                   <Wallet className="text-emerald-500" size={36} />
                 </div>
                 <h2 className="text-2xl font-black italic tracking-tighter text-white">
@@ -87,7 +113,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, userEmail }) =
               </div>
             </div>
 
-            {/* Footer Tagline: Diperkecil agar lebih elegan & tidak press */}
+            {/* Footer Tagline */}
             <div className="bg-black/40 py-5 text-center border-t border-white/5">
               <p className="text-[7px] text-zinc-700 uppercase tracking-[4px] font-black italic opacity-80">
                 Next Gen Financial Framework · 2026
@@ -98,6 +124,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, userEmail }) =
       )}
     </AnimatePresence>
   );
-};
+});
 
 export default AboutModal;

@@ -1,3 +1,4 @@
+import React, { memo } from 'react'; // 1. Tambah memo
 import { LogOut, Sun, Moon, Sunrise } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -6,7 +7,8 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
-export const Header = ({ userName, onLogout }: HeaderProps) => {
+// 2. Bungkus dengan memo
+export const Header = memo(({ userName, onLogout }: HeaderProps) => {
   // Logika ucapan berdasarkan waktu [cite: 2026-01-14]
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -19,11 +21,12 @@ export const Header = ({ userName, onLogout }: HeaderProps) => {
   const greeting = getGreeting();
 
   return (
-    <header className="flex justify-between items-center mb-10 px-1">
+    <header className="flex justify-between items-center mb-10 px-1 transform-gpu">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex flex-col"
+        // 3. Tambahkan GPU layer untuk animasi x-axis yang halus
+        className="flex flex-col transform-gpu"
       >
         <div className="flex items-center gap-2 mb-1">
           {greeting.icon}
@@ -45,4 +48,4 @@ export const Header = ({ userName, onLogout }: HeaderProps) => {
       </motion.button>
     </header>
   );
-};
+});

@@ -1,3 +1,4 @@
+import React, { memo } from 'react'; // 1. Tambah memo
 import { Utensils, Car, ShoppingBag, Gamepad2, Layers, ChevronRight, Trash2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +16,7 @@ interface TransactionListProps {
   onDelete?: (id: string) => void;
 }
 
+// Pindahkan helper ke luar biar nggak dibuat ulang tiap render
 const getCategoryDetails = (category: string) => {
   switch (category) {
     case 'Makan & Minum':
@@ -30,20 +32,22 @@ const getCategoryDetails = (category: string) => {
   }
 };
 
-export const TransactionList = ({ transactions, limit, onDelete }: TransactionListProps) => {
+// 2. Bungkus dengan memo
+export const TransactionList = memo(({ transactions, limit, onDelete }: TransactionListProps) => {
   const navigate = useNavigate();
 
+  // Optimasi Animasi: Kurangi kompleksitas stagger di mobile
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 }
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 }
     }
   };
 
   const itemAnim = {
-    hidden: { x: -10, opacity: 0 },
-    show: { x: 0, opacity: 1 }
+    hidden: { x: -5, opacity: 0 },
+    show: { x: 0, opacity: 1, transition: { duration: 0.2 } }
   };
 
   const displayedTransactions = limit ? transactions.slice(0, limit) : transactions;
@@ -57,7 +61,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
 
         {limit && transactions.length > limit && (
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/reports')}
             className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/5 py-2 px-4 rounded-xl border border-emerald-500/10 active:bg-emerald-500/10 transition-all"
           >
@@ -72,7 +76,7 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
         animate="show"
         className="space-y-3"
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="popLayout" initial={false}>
           {displayedTransactions.length > 0 ? (
             displayedTransactions.map((item) => {
               const details = getCategoryDetails(item.category);
@@ -81,10 +85,9 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
                   key={item.id}
                   variants={itemAnim}
                   exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                  layout
-                  className="bg-zinc-900/30 border border-white/5 p-4 rounded-[1.75rem] flex items-center justify-between backdrop-blur-md relative overflow-hidden active:bg-zinc-900/60 transition-all"
+                  layout // Penting buat smooth delete
+                  className="bg-zinc-900/30 border border-white/5 p-4 rounded-[1.75rem] flex items-center justify-between backdrop-blur-md relative overflow-hidden transform-gpu"
                 >
-                  {/* SISI KIRI: Ikon & Info Deskripsi */}
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className={`w-12 h-12 flex-shrink-0 ${details.bg} ${details.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                       {details.icon}
@@ -99,14 +102,11 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
                     </div>
                   </div>
 
-                  {/* SISI KANAN: Nominal & Status Settled (Saran User) */}
                   <div className="flex items-center gap-3 ml-4 flex-shrink-0">
                     <div className="flex flex-col items-end gap-1">
                       <p className="text-sm font-black text-rose-500 tracking-tight whitespace-nowrap">
                         - Rp {item.amount.toLocaleString('id-ID')}
                       </p>
-                      
-                      {/* Badge Settled diletakkan di bawah nominal */}
                       <div className="flex items-center gap-1 text-emerald-500/60">
                         <CheckCircle2 size={10} strokeWidth={3} />
                         <p className="text-[8px] font-black uppercase tracking-wider">Settled</p>
@@ -145,4 +145,4 @@ export const TransactionList = ({ transactions, limit, onDelete }: TransactionLi
       </motion.div>
     </div>
   );
-};
+});

@@ -1,5 +1,6 @@
+import React, { memo } from 'react';
 import { Trash2, X, Calendar as CalendarIcon, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 interface FixedExpense {
   id: string;
@@ -17,29 +18,45 @@ interface FixedExpenseListProps {
   onAddClick: () => void;
 }
 
-export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, onAddClick }: FixedExpenseListProps) => {
+export const FixedExpenseList = memo(({ isOpen, onClose, expenses, onDelete, onPay, onAddClick }: FixedExpenseListProps) => {
   const today = new Date().getDate();
 
-  const container = {
+  // Explicitly typing as Variants to fix the TypeScript error
+  const container: Variants = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+        type: "tween",
+        ease: "easeOut"
+      }
+    }
   };
 
-  const itemAnim = {
+  const itemAnim: Variants = {
     hidden: { x: -10, opacity: 0 },
-    show: { x: 0, opacity: 1 }
+    show: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: "tween",
+        ease: "easeOut",
+        duration: 0.2
+      }
+    }
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[140] flex items-end justify-center">
-          {/* Backdrop */}
+          {/* Backdrop Blur Premium */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md"
+            className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md transform-gpu"
             onClick={onClose}
           />
 
@@ -48,8 +65,8 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="relative w-full max-w-md bg-zinc-900 rounded-t-[3rem] p-8 border-t border-white/5 shadow-2xl flex flex-col max-h-[90vh]"
+            transition={{ type: "tween", ease: "easeOut", duration: 0.3 }}
+            className="relative w-full max-w-md bg-zinc-900 rounded-t-[3rem] p-8 border-t border-white/5 shadow-2xl flex flex-col max-h-[90vh] transform-gpu"
           >
             {/* Handle Bar */}
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8"></div>
@@ -60,6 +77,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
                 <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Jangan sampai telat! </p>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 active:scale-90 transition-all"
               >
@@ -71,7 +89,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
               variants={container}
               initial="hidden"
               animate="show"
-              className="space-y-4 overflow-y-auto pr-2 mb-8 custom-scrollbar flex-1"
+              className="space-y-4 overflow-y-auto pr-2 mb-8 custom-scrollbar flex-1 transform-gpu"
             >
               {expenses.length > 0 ? (
                 expenses.map((item) => {
@@ -84,7 +102,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
                       className={`p-5 rounded-[2rem] border transition-all duration-500 relative overflow-hidden group ${isDueSoon
                         ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_10px_30px_rgba(245,158,11,0.1)]'
                         : 'bg-zinc-950/50 border-white/5'
-                        }`}
+                        } transform-gpu`}
                     >
                       <div className="flex items-center justify-between relative z-10">
                         <div className="flex-1">
@@ -105,6 +123,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
 
                           <div className="flex gap-2">
                             <button
+                              type="button"
                               onClick={() => onPay(item)}
                               className="w-11 h-11 bg-emerald-500 text-zinc-950 rounded-[1.2rem] flex items-center justify-center shadow-lg active:scale-90 transition-all"
                               title="Bayar"
@@ -113,6 +132,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => onDelete(item.id)}
                               className="w-11 h-11 bg-zinc-800/80 text-rose-500 rounded-[1.2rem] flex items-center justify-center border border-white/5 active:scale-90 transition-all"
                             >
@@ -135,6 +155,7 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
             </motion.div>
 
             <button
+              type="button"
               onClick={onAddClick}
               className="w-full bg-white text-zinc-950 font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
             >
@@ -148,4 +169,4 @@ export const FixedExpenseList = ({ isOpen, onClose, expenses, onDelete, onPay, o
       )}
     </AnimatePresence>
   );
-};
+});
