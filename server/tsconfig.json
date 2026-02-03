@@ -39,5 +39,5 @@
   },
   /* Pastikan folder shared masuk dalam jangkauan kompilasi */
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "exclude": ["node_modules", "**/*.test.ts", "dist"]
 }
