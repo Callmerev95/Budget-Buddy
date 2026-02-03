@@ -1,74 +1,90 @@
-import React, { memo } from 'react'; // 1. Tambah memo
+import React, { memo } from 'react';
 import { Edit3, ArrowDownCircle, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Menghindari any sesuai instruksi [cite: 2026-01-10]
 interface SummaryGridProps {
   dailyLimit: number;
   totalSpent: number;
   onEditLimit: () => void;
+  isDarkMode?: boolean;
 }
 
-// 2. Bungkus dengan memo agar grid statis ini tidak re-render saat list transaksi di bawahnya update
-export const SummaryGrid = memo(({ dailyLimit, totalSpent, onEditLimit }: SummaryGridProps) => {
+export const SummaryGrid = memo(({ dailyLimit, totalSpent, onEditLimit, isDarkMode = true }: SummaryGridProps) => {
   return (
-    <div className="grid grid-cols-2 gap-4 mb-8 transform-gpu"> {/* Gunakan GPU layer untuk grid container */}
+    <div className="grid grid-cols-2 gap-4 mb-8 transform-gpu">
 
-      {/* CARD LIMIT HARIAN - Mobile Optimized */}
+      {/* CARD LIMIT HARIAN */}
       <motion.button
         whileTap={{ scale: 0.96 }}
         onClick={onEditLimit}
-        // Pakai transform-gpu agar scaling animasi tidak buram/pecah
-        className="relative overflow-hidden group active:brightness-90 transition-all transform-gpu"
+        className="relative overflow-hidden group active:brightness-95 transition-all transform-gpu"
       >
-        <div className="bg-zinc-900/40 p-5 rounded-[2.25rem] border border-white/5 backdrop-blur-xl text-left shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-          {/* Inner Glow Decorative */}
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+        <div className={`p-5 rounded-[2.25rem] border text-left transition-all duration-500 h-full ${isDarkMode
+            ? 'bg-zinc-900/40 border-white/5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
+            : 'bg-white border-zinc-200 shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)]'
+          }`}>
 
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${isDarkMode ? 'bg-emerald-500/10 text-emerald-500' : 'bg-emerald-50 text-emerald-600'
+              }`}>
               <Edit3 size={18} strokeWidth={2.5} />
             </div>
-            <div className="p-1 opacity-40">
-              <ChevronRight size={14} className="text-emerald-500" />
+            <div className={`p-1 transition-opacity ${isDarkMode ? 'opacity-40' : 'opacity-30'}`}>
+              <ChevronRight size={14} className={isDarkMode ? 'text-emerald-500' : 'text-emerald-600'} />
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 relative z-10">
             <p className="text-zinc-500 text-[10px] uppercase font-black tracking-[0.2em]">Limit Harian</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-[10px] font-bold text-emerald-500/40">Rp</span>
-              <p className="text-xl font-black text-white leading-none tracking-tighter">
+              <span className={`text-[10px] font-bold transition-colors ${isDarkMode ? 'text-emerald-500/40' : 'text-emerald-600/60'
+                }`}>
+                Rp
+              </span>
+              <p className={`text-xl font-black leading-none tracking-tighter transition-colors duration-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'
+                }`}>
                 {dailyLimit.toLocaleString('id-ID')}
               </p>
             </div>
           </div>
 
-          <div className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-500/5 rounded-full blur-2xl" />
+          {/* Background Glow - Dimatikan pas Light Mode biar ga bikin Card jadi abu-abu */}
+          {isDarkMode && (
+            <div className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full blur-2xl bg-emerald-500/5 opacity-100 transition-opacity" />
+          )}
         </div>
       </motion.button>
 
-      {/* CARD TERPAKAI - Mobile Optimized */}
+      {/* CARD TERPAKAI */}
       <div className="relative overflow-hidden transform-gpu">
-        <div className="bg-zinc-900/40 p-5 rounded-[2.25rem] border border-white/5 backdrop-blur-xl text-left shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-rose-500/10 to-transparent" />
+        <div className={`p-5 rounded-[2.25rem] border text-left transition-all duration-500 h-full ${isDarkMode
+            ? 'bg-zinc-900/40 border-white/5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
+            : 'bg-white border-zinc-200 shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)]'
+          }`}>
 
-          <div className="w-10 h-10 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 mb-4 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 relative z-10 ${isDarkMode ? 'bg-rose-500/10 text-rose-500' : 'bg-rose-50 text-rose-600'
+            }`}>
             <ArrowDownCircle size={18} strokeWidth={2.5} />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 relative z-10">
             <p className="text-zinc-500 text-[10px] uppercase font-black tracking-[0.2em]">Terpakai</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-[10px] font-bold text-rose-500/40">Rp</span>
-              <p className="text-xl font-black text-white leading-none tracking-tighter">
+              <span className={`text-[10px] font-bold transition-colors ${isDarkMode ? 'text-rose-500/40' : 'text-rose-600/60'
+                }`}>
+                Rp
+              </span>
+              <p className={`text-xl font-black leading-none tracking-tighter transition-colors duration-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'
+                }`}>
                 {totalSpent.toLocaleString('id-ID')}
               </p>
             </div>
           </div>
 
-          {/* Blur-3xl sangat berat, transform-gpu wajib di sini */}
-          <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-rose-500/5 rounded-full blur-3xl" />
+          {/* Background Glow */}
+          {isDarkMode && (
+            <div className="absolute -bottom-8 -right-8 w-20 h-20 rounded-full blur-3xl bg-rose-500/5 opacity-100 transition-opacity" />
+          )}
         </div>
       </div>
     </div>

@@ -5,10 +5,11 @@ import { motion } from 'framer-motion';
 interface HeaderProps {
   userName: string;
   onLogout: () => void;
+  isDarkMode?: boolean; // Tambahkan props tema [cite: 2026-02-03]
 }
 
 // 2. Bungkus dengan memo
-export const Header = memo(({ userName, onLogout }: HeaderProps) => {
+export const Header = memo(({ userName, onLogout, isDarkMode = true }: HeaderProps) => {
   // Logika ucapan berdasarkan waktu [cite: 2026-01-14]
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -30,11 +31,13 @@ export const Header = memo(({ userName, onLogout }: HeaderProps) => {
       >
         <div className="flex items-center gap-2 mb-1">
           {greeting.icon}
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.25em]">
+          <p className={`transition-colors duration-500 text-[10px] font-black uppercase tracking-[0.25em] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+            }`}>
             {greeting.text}
           </p>
         </div>
-        <h1 className="text-2xl font-black text-white tracking-tight">
+        <h1 className={`text-2xl font-black tracking-tight transition-colors duration-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'
+          }`}>
           {userName?.split(' ')[0] || 'Buddy'} <span className="text-emerald-500 italic">!</span>
         </h1>
       </motion.div>
@@ -42,7 +45,10 @@ export const Header = memo(({ userName, onLogout }: HeaderProps) => {
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={onLogout}
-        className="w-11 h-11 flex items-center justify-center bg-zinc-900/50 border border-white/5 rounded-2xl text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all duration-300 shadow-xl"
+        className={`w-11 h-11 flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl border ${isDarkMode
+            ? 'bg-zinc-900/50 border-white/5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10'
+            : 'bg-white border-zinc-200 text-zinc-400 hover:text-rose-500 hover:bg-rose-50'
+          }`}
       >
         <LogOut size={20} strokeWidth={2.5} />
       </motion.button>
