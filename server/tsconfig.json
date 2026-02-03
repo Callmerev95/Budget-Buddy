@@ -24,9 +24,11 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias untuk Shared Folder */
+    /* Alias untuk Shared Folder & Mapping Modul [cite: 2026-02-03] */
     "paths": {
+      /* Gunakan path dari sudut pandang rootDir ("..") [cite: 2026-02-03] */
       "@shared/*": ["../shared/src/*"],
+      /* Paksa resolusi zod ke node_modules di folder server [cite: 2026-02-03] */
       "zod": ["./node_modules/zod"]
     },
 
