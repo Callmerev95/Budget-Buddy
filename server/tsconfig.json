@@ -26,7 +26,8 @@
 
     /* Alias untuk Shared Folder */
     "paths": {
-      "@shared/*": ["../shared/src/*"]
+      "@shared/*": ["../shared/src/*"],
+      "zod": ["./node_modules/zod"]
     },
 
     /* Interop & Miscellaneous */
