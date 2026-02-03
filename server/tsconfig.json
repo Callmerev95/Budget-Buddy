@@ -24,12 +24,10 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias untuk Shared Folder (Penting: Tambahkan baseUrl) */
+    /* Alias untuk Shared Folder */
     "paths": {
-      "@shared/*": ["./../shared/src/*"]
+      "@shared/*": ["../shared/src/*"]
     },
-
-    /* Membungkam warning deprecation TS 5.x/6.x */
 
     /* Interop & Miscellaneous */
     "esModuleInterop": true,
@@ -37,7 +35,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  /* Pastikan folder shared masuk dalam jangkauan kompilasi */
-  "include": ["src/**/*", "./../shared/src/**/*"],
+  /* Masukkan folder shared ke jangkauan kompilasi */
+  "include": ["src/**/*", "../shared/src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts", "dist"]
 }
