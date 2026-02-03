@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
-import { registerSchema } from "../../../shared/src/schemas/auth.schema.js";
+import { registerSchema } from "@shared/schemas/auth.schema.js";
 import webpush from "../lib/webpush.js";
 import { supabase } from "../lib/supabase.js";
 
@@ -136,11 +136,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     console.error("Forgot Password Error:", error);
-    return res
-      .status(500)
-      .json({
-        message: "Terjadi kesalahan sistem saat memproses permintaan Anda.",
-      });
+    return res.status(500).json({
+      message: "Terjadi kesalahan sistem saat memproses permintaan Anda.",
+    });
   }
 };
 
