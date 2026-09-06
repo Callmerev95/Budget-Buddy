@@ -28,12 +28,9 @@ jobs:
 
       # Prisma client di-generate ke packages/api/generated dan tidak
       # ikut di-commit, jadi typecheck butuh langkah ini lebih dulu.
+      # `generate` tidak menyentuh database, jadi tidak perlu kredensial.
       - name: Generate Prisma client
         run: npm run prisma:generate
-        env:
-          # generate tidak menyentuh database; nilai ini hanya perlu ada
-          # karena env() di prisma.config.ts melempar bila variabel kosong.
-          DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/postgres
 
       - name: Format check
         run: npm run format:check
