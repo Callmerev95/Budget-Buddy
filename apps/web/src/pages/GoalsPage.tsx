@@ -15,6 +15,7 @@ import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
 import { toErrorMessage } from "../lib/api";
+import { formatShortDate } from "../lib/format";
 
 export function GoalsPage() {
   const goals = useGoals();
@@ -109,6 +110,16 @@ export function GoalsPage() {
             {goals.data.map((goal) => {
               const pct = goal.target > 0 ? (goal.saved / goal.target) * 100 : 0;
               const done = goal.saved >= goal.target;
+              const daysSince = Math.max(
+                1,
+                (Date.now() - new Date(goal.createdAt).getTime()) / 86_400_000,
+              );
+              const rate = goal.saved / daysSince;
+              const remaining = goal.target - goal.saved;
+              const eta =
+                !done && rate > 0
+                  ? new Date(Date.now() + (remaining / rate) * 86_400_000)
+                  : null;
               return (
                 <Card key={goal.id} className="space-y-3 p-4">
                   <div className="flex items-start gap-3">
@@ -148,7 +159,18 @@ export function GoalsPage() {
                       + Nabung
                     </Button>
                   )}
-                  {done && <p className="text-sm font-medium text-income">Tercapai.</p>}
+                  {done ? (
+                    <p className="text-sm font-medium text-income">Tercapai.</p>
+                  ) : (
+                    <p className="text-[13px] text-muted">
+                      Kurang <Money amount={remaining} />
+                      {goal.targetDate
+                        ? ` · target ${formatShortDate(goal.targetDate)}`
+                        : eta
+                          ? ` · perkiraan tercapai ${formatShortDate(eta)} bila konsisten`
+                          : null}
+                    </p>
+                  )}
                 </Card>
               );
             })}

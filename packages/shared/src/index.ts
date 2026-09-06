@@ -6,3 +6,4 @@ export * from "./schemas/catalog.schema.js";
 export * from "./schemas/fixed-expense.schema.js";
 export * from "./schemas/recurring.schema.js";
 export * from "./schemas/transaction.schema.js";
+export * from "./schemas/transfer.schema.js";

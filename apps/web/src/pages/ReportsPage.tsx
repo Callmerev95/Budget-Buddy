@@ -11,9 +11,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useTrend } from "../hooks/useCatalog";
+import { useTrend, useCompare } from "../hooks/useCatalog";
 import { useTransactions } from "../hooks/useFinance";
 import { useCategories } from "../hooks/useCatalog";
+import { api, toErrorMessage } from "../lib/api";
+import { toast } from "sonner";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Money } from "../components/ui/Money";
 import { CategoryIcon } from "../components/ui/CategoryIcon";
@@ -41,10 +43,37 @@ function monthLabel(periodKey: string): string {
 
 export function ReportsPage() {
   const [months, setMonths] = useState(6);
+  const [exporting, setExporting] = useState(false);
   const trend = useTrend(months);
   const month = toCalendarDay().slice(0, 7);
   const transactions = useTransactions();
   const categories = useCategories();
+  const compare = useCompare(month);
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const [y, m] = month.split("-").map(Number) as [number, number];
+      const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      const from = `${month}-01`;
+      const to = `${month}-${String(lastDay).padStart(2, "0")}`;
+      const res = await api.get(`/transactions/export`, {
+        params: { from, to },
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data], { type: "text/csv" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `budget-buddy-${month}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV diunduh.");
+    } catch (err) {
+      toast.error(toErrorMessage(err, "Gagal mengekspor CSV."));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const breakdown = useMemo(() => {
     const all = (transactions.data?.pages ?? []).flatMap((p) => p.data);
@@ -75,22 +104,32 @@ export function ReportsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Laporan</h1>
           <p className="text-sm text-muted">Tren dan rincian pengeluaran.</p>
         </div>
-        <div role="group" aria-label="Rentang tren" className="flex gap-2">
-          {[3, 6, 12].map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={months === n}
-              onClick={() => setMonths(n)}
-              className={`rounded-control px-3 py-1.5 text-sm font-medium transition-colors ${
-                months === n
-                  ? "bg-accent/10 text-accent"
-                  : "text-muted hover:bg-surface-2"
-              }`}
-            >
-              {n} bln
-            </button>
-          ))}
+        <div className="flex gap-2">
+          <div role="group" aria-label="Rentang tren" className="flex gap-1">
+            {[3, 6, 12].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={months === n}
+                onClick={() => setMonths(n)}
+                className={`rounded-control px-3 py-1.5 text-sm font-medium transition-colors ${
+                  months === n
+                    ? "bg-accent/10 text-accent"
+                    : "text-muted hover:bg-surface-2"
+                }`}
+              >
+                {n} bln
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => void exportCsv()}
+            disabled={exporting}
+            className="rounded-control bg-surface-2 px-3 py-1.5 text-sm font-medium text-text transition-colors hover:bg-border/60 disabled:opacity-50"
+          >
+            {exporting ? "Mengunduh…" : "CSV"}
+          </button>
         </div>
       </header>
 
@@ -165,6 +204,76 @@ export function ReportsPage() {
             </span>
           </div>
         </Card>
+      </section>
+
+      <section>
+        <SectionHeader
+          title={`Banding ${compare.data?.previousMonth ?? ""} → ${month}`}
+        />
+        <Card className="grid grid-cols-2 gap-4 p-4">
+          {[
+            {
+              label: "Pemasukan",
+              now: compare.data?.current.income ?? 0,
+              then: compare.data?.previous.income ?? 0,
+              invert: false,
+            },
+            {
+              label: "Pengeluaran",
+              now: compare.data?.current.expense ?? 0,
+              then: compare.data?.previous.expense ?? 0,
+              invert: true,
+            },
+          ].map((row) => {
+            const diff = row.now - row.then;
+            const good = diff === 0 ? null : row.invert ? diff < 0 : diff > 0;
+            return (
+              <div key={row.label}>
+                <p className="text-[13px] text-muted">{row.label}</p>
+                <p className="tnum text-xl font-semibold">
+                  <Money amount={row.now} />
+                </p>
+                <p
+                  className={`text-[13px] font-medium ${
+                    good === null ? "text-muted" : good ? "text-income" : "text-expense"
+                  }`}
+                >
+                  {diff === 0
+                    ? "Sama seperti bulan lalu"
+                    : `${diff > 0 ? "+" : "−"}${formatCompactCurrency(Math.abs(diff)).replace("Rp ", "")} vs bulan lalu`}
+                </p>
+              </div>
+            );
+          })}
+        </Card>
+        {(compare.data?.deltas.length ?? 0) > 0 && (
+          <Card className="mt-3 divide-y divide-border">
+            {compare.data?.deltas.slice(0, 5).map((d) => {
+              const diff = d.current - d.previous;
+              return (
+                <div key={d.name} className="flex items-center gap-3 p-3">
+                  <span className="flex-1 truncate text-[15px] font-medium">
+                    {d.name}
+                  </span>
+                  <Money amount={d.current} className="text-[15px] font-semibold" />
+                  <span
+                    className={`tnum w-20 text-right text-[13px] font-medium ${
+                      diff === 0
+                        ? "text-muted"
+                        : diff > 0
+                          ? "text-expense"
+                          : "text-income"
+                    }`}
+                  >
+                    {diff === 0
+                      ? "±0"
+                      : `${diff > 0 ? "+" : "−"}${formatCompactCurrency(Math.abs(diff)).replace("Rp ", "")}`}
+                  </span>
+                </div>
+              );
+            })}
+          </Card>
+        )}
       </section>
 
       <section>

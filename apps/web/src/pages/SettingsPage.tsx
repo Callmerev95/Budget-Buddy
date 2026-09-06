@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useProfile, useSavePlan } from "../hooks/useFinance";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Button } from "../components/ui/Button";
+import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
 import { toErrorMessage, api } from "../lib/api";
 import { supabase } from "../lib/supabase";
@@ -36,6 +37,9 @@ export function SettingsPage() {
     "unknown",
   );
   const [pushBusy, setPushBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (profile.data) {
@@ -119,6 +123,21 @@ export function SettingsPage() {
   const logout = async () => {
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
+  };
+
+  const submitDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleting(true);
+    try {
+      await api.delete("/user/account", { data: { email: deleteEmail } });
+      await supabase.auth.signOut();
+      toast.success("Akun dihapus. Sampai jumpa.");
+      navigate("/login", { replace: true });
+    } catch (err) {
+      toast.error(toErrorMessage(err, "Gagal menghapus akun."));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -250,6 +269,60 @@ export function SettingsPage() {
               <LogOut size={15} aria-hidden="true" /> Keluar
             </Button>
           </div>
+        </Card>
+      </section>
+
+      <section>
+        <SectionHeader title="Zona berbahaya" />
+        <Card className="space-y-3 border-expense/40 p-4">
+          <p className="text-sm text-muted">
+            Menghapus akun bersifat permanen: seluruh transaksi, budget, target, dan akun
+            login ikut terhapus dan tidak bisa dikembalikan.
+          </p>
+          {!confirmingDelete ? (
+            <Button variant="danger" size="sm" onClick={() => setConfirmingDelete(true)}>
+              Hapus akunku…
+            </Button>
+          ) : (
+            <form
+              onSubmit={(e) => void submitDelete(e)}
+              className="space-y-3 rounded-control bg-expense/5 p-3"
+            >
+              <p className="text-sm font-medium">
+                Ketik alamat emailmu untuk konfirmasi:{" "}
+                <strong>{profile.data?.email}</strong>
+              </p>
+              <Field
+                label="Email konfirmasi"
+                type="email"
+                autoComplete="off"
+                value={deleteEmail}
+                onChange={(e) => setDeleteEmail(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                    setDeleteEmail("");
+                  }}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  variant="danger"
+                  size="sm"
+                  loading={deleting}
+                  className="flex-1"
+                >
+                  Ya, hapus permanen
+                </Button>
+              </div>
+            </form>
+          )}
         </Card>
       </section>
     </div>

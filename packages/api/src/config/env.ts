@@ -65,6 +65,13 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url("SUPABASE_URL harus berupa URL yang valid"),
   SUPABASE_ANON_KEY: z.string().min(1, "SUPABASE_ANON_KEY wajib diisi"),
 
+  /**
+   * Kunci service role untuk operasi admin (hapus auth user di danger zone).
+   * Opsional: tanpa ini endpoint hapus akun menolak dengan 503.
+   * Tidak pernah dikirim ke client dalam bentuk apa pun.
+   */
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+
   /** URL publik aplikasi, dipakai untuk redirect reset password. */
   APP_URL: z.string().url("APP_URL harus berupa URL yang valid"),
 

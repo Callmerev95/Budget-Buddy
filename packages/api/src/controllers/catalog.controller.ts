@@ -24,12 +24,28 @@ import { JAKARTA_TIME_ZONE, toCalendarDay } from "../lib/calendar.js";
 export async function listAccounts(req: Request, res: Response): Promise<void> {
   const userId = getProfileId(req);
 
-  const accounts = await prisma.account.findMany({
-    where: { userId },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-  });
+  const [accounts, sums] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+    prisma.transaction.groupBy({
+      by: ["accountId"],
+      where: { userId },
+      _sum: { amount: true },
+    }),
+  ]);
 
-  res.status(200).json({ data: accounts });
+  // Saldo = saldo awal + seluruh mutasi bertanda. Baris transfer keluar
+  // bernilai negatif dan masuk positif, jadi satu penjumlahan cukup.
+  const flowByAccount = new Map(sums.map((row) => [row.accountId, row._sum.amount ?? 0]));
+
+  res.status(200).json({
+    data: accounts.map((account) => ({
+      ...account,
+      balance: account.initialBalance + (flowByAccount.get(account.id) ?? 0),
+    })),
+  });
 }
 
 export async function createAccount(req: Request, res: Response): Promise<void> {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   AmountSchema,
+  compareQuerySchema,
+  createTransferSchema,
+  deleteAccountSchema,
+  exportQuerySchema,
   DueDateSchema,
   NonNegativeAmountSchema,
   createFixedExpenseSchema,
@@ -77,6 +81,7 @@ describe("createTransactionSchema", () => {
       description: "Makan siang",
       amount: 35_000,
       category: "Makan & Minum",
+      type: "EXPENSE",
     });
   });
 
@@ -201,5 +206,68 @@ describe("registerSchema", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("createTransferSchema", () => {
+  const base = {
+    fromAccountId: "123e4567-e89b-42d3-a456-426614174000",
+    toAccountId: "123e4567-e89b-42d3-a456-426614174001",
+    amount: 50000,
+  };
+
+  it("menerima transfer antar akun berbeda", () => {
+    expect(createTransferSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("menolak akun asal dan tujuan yang sama", () => {
+    const result = createTransferSchema.safeParse({
+      ...base,
+      toAccountId: base.fromAccountId,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("menolak nominal nol", () => {
+    expect(createTransferSchema.safeParse({ ...base, amount: 0 }).success).toBe(false);
+  });
+});
+
+describe("exportQuerySchema", () => {
+  it("menerima rentang valid", () => {
+    expect(
+      exportQuerySchema.safeParse({ from: "2026-01-01", to: "2026-01-31" }).success,
+    ).toBe(true);
+  });
+
+  it("menolak rentang lebih dari 366 hari", () => {
+    expect(
+      exportQuerySchema.safeParse({ from: "2025-01-01", to: "2026-06-01" }).success,
+    ).toBe(false);
+  });
+
+  it("menolak tanggal awal setelah tanggal akhir", () => {
+    expect(
+      exportQuerySchema.safeParse({ from: "2026-02-01", to: "2026-01-01" }).success,
+    ).toBe(false);
+  });
+});
+
+describe("compareQuerySchema", () => {
+  it("menerima format YYYY-MM", () => {
+    expect(compareQuerySchema.safeParse({ month: "2026-09" }).success).toBe(true);
+  });
+
+  it("menolak bulan 13", () => {
+    expect(compareQuerySchema.safeParse({ month: "2026-13" }).success).toBe(false);
+  });
+});
+
+describe("deleteAccountSchema", () => {
+  it("menormalkan email konfirmasi", () => {
+    const result = deleteAccountSchema.parse({ email: "  REV@Example.COM " });
+
+    expect(result.email).toBe("rev@example.com");
   });
 });

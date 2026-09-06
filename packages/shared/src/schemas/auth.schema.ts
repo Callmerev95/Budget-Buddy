@@ -22,3 +22,10 @@ export const forgotPasswordSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Konfirmasi hapus akun: email yang diketik harus cocok dengan profil. */
+export const deleteAccountSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Format email tidak valid"),
+});
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

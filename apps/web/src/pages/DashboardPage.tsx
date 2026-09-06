@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BellRing, Wallet } from "lucide-react";
+import { ArrowRight, BellRing, TriangleAlert, Wallet } from "lucide-react";
 import { useProfile, useSummary, useTransactions } from "../hooks/useFinance";
 import { useOccurrences } from "../hooks/useRecurring";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
@@ -8,7 +8,7 @@ import { Money } from "../components/ui/Money";
 import { Progress } from "../components/ui/Progress";
 import { CategoryIcon } from "../components/ui/CategoryIcon";
 import { toCalendarDay } from "../lib/format";
-import { useCategories } from "../hooks/useCatalog";
+import { useBudgets, useCategories } from "../hooks/useCatalog";
 
 function toneFor(percentage: number): "default" | "warning" | "danger" | "success" {
   if (percentage >= 100) return "danger";
@@ -22,6 +22,7 @@ export function DashboardPage() {
   const transactions = useTransactions();
   const month = toCalendarDay().slice(0, 7);
   const occurrences = useOccurrences(month);
+  const budgets = useBudgets(month);
   const categories = useCategories();
 
   const recent = useMemo(() => {
@@ -38,6 +39,15 @@ export function DashboardPage() {
   const upcoming = useMemo(
     () => (occurrences.data ?? []).filter((o) => o.status === "PENDING").slice(0, 3),
     [occurrences.data],
+  );
+
+  const strained = useMemo(
+    () =>
+      (budgets.data ?? [])
+        .map((b) => ({ ...b, pct: b.amount > 0 ? (b.spent / b.amount) * 100 : 0 }))
+        .filter((b) => b.pct >= 85)
+        .slice(0, 3),
+    [budgets.data],
   );
 
   const today = toCalendarDay();
@@ -130,6 +140,27 @@ export function DashboardPage() {
           Atur rencana keuangan <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </Card>
+
+      {strained.length > 0 && (
+        <Card className="flex items-start gap-3 border-warning/40 p-4" role="status">
+          <TriangleAlert
+            size={18}
+            className="mt-0.5 shrink-0 text-warning"
+            aria-hidden="true"
+          />
+          <div className="text-sm">
+            <p className="font-semibold">{strained.length} budget hampir habis</p>
+            <p className="text-muted">
+              {strained
+                .map((b) => `${b.category.name} (${Math.round(Math.min(100, b.pct))}%)`)
+                .join(" · ")}
+            </p>
+            <Link to="/budgets" className="mt-1 inline-block font-medium text-accent">
+              Lihat budget
+            </Link>
+          </div>
+        </Card>
+      )}
 
       {/* Tagihan mendatang */}
       <section>

@@ -5,7 +5,13 @@ const directives = buildCspDirectives({ supabaseUrl: "https://abc.supabase.co" }
 
 describe("buildCspDirectives", () => {
   it("tidak mengizinkan inline script atau eval", () => {
-    expect(directives["script-src"]).toEqual(["'self'"]);
+    expect(directives["script-src"]).toContain("'self'");
+    expect(directives["script-src"]).not.toContain("'unsafe-inline'");
+  });
+
+  it("mengizinkan widget Turnstile dan tidak lebih", () => {
+    expect(directives["script-src"]).toContain("https://challenges.cloudflare.com");
+    expect(directives["frame-src"]).toContain("https://challenges.cloudflare.com");
   });
 
   it("mengizinkan API Supabase milik sendiri", () => {

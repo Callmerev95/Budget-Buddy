@@ -3,7 +3,7 @@ import { Landmark, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useAccounts, useAddAccount, useDeleteAccount } from "../hooks/useCatalog";
 import { usePayOccurrence, useOccurrences } from "../hooks/useRecurring";
-import { useAddRule, useDeleteRule, useRules } from "../hooks/useFinance";
+import { useAddRule, useDeleteRule, useRules, useTransfer } from "../hooks/useFinance";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Money } from "../components/ui/Money";
 import { Sheet } from "../components/ui/Sheet";
@@ -38,8 +38,37 @@ export function AccountsPage() {
   const [ruleName, setRuleName] = useState("");
   const [ruleAmount, setRuleAmount] = useState(0);
   const [ruleDay, setRuleDay] = useState("1");
+  const transfer = useTransfer();
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [fromId, setFromId] = useState("");
+  const [toId, setToId] = useState("");
+  const [transferAmount, setTransferAmount] = useState(0);
 
   const pending = (occurrences.data ?? []).filter((o) => o.status === "PENDING");
+
+  const submitTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fromId || !toId) {
+      toast.error("Pilih akun asal dan tujuan.");
+      return;
+    }
+    if (transferAmount <= 0) {
+      toast.error("Nominal harus lebih dari 0.");
+      return;
+    }
+    try {
+      await transfer.mutateAsync({
+        fromAccountId: fromId,
+        toAccountId: toId,
+        amount: transferAmount,
+      });
+      toast.success("Transfer tercatat.");
+      setTransferAmount(0);
+      setTransferOpen(false);
+    } catch (err) {
+      toast.error(toErrorMessage(err, "Gagal mencatat transfer."));
+    }
+  };
 
   const submitAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,9 +154,14 @@ export function AccountsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Akun & Tagihan</h1>
           <p className="text-sm text-muted">Dompetmu dan tagihan yang menunggu.</p>
         </div>
-        <Button size="sm" onClick={() => setSheetOpen(true)}>
-          + Akun
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setTransferOpen(true)}>
+            Transfer
+          </Button>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>
+            + Akun
+          </Button>
+        </div>
       </header>
 
       <section>
@@ -319,6 +353,66 @@ export function AccountsPage() {
           />
           <Button type="submit" loading={addRule.isPending} className="w-full" size="lg">
             Simpan
+          </Button>
+        </form>
+      </Sheet>
+
+      <Sheet
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        title="Transfer antar akun"
+        description="Dicatat sebagai dua sisi sekaligus."
+      >
+        <form onSubmit={(e) => void submitTransfer(e)} className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="transfer-from"
+              className="ml-1 block text-[13px] font-semibold text-muted"
+            >
+              Dari
+            </label>
+            <select
+              id="transfer-from"
+              value={fromId}
+              onChange={(e) => setFromId(e.target.value)}
+              className="w-full rounded-control border border-border bg-surface px-4 py-3 text-[15px] text-text focus:border-accent focus:outline-none"
+            >
+              <option value="">Pilih akun asal</option>
+              {(accounts.data ?? []).map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label
+              htmlFor="transfer-to"
+              className="ml-1 block text-[13px] font-semibold text-muted"
+            >
+              Ke
+            </label>
+            <select
+              id="transfer-to"
+              value={toId}
+              onChange={(e) => setToId(e.target.value)}
+              className="w-full rounded-control border border-border bg-surface px-4 py-3 text-[15px] text-text focus:border-accent focus:outline-none"
+            >
+              <option value="">Pilih akun tujuan</option>
+              {(accounts.data ?? []).map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <AmountInput
+            label="Nominal"
+            value={transferAmount}
+            onChange={setTransferAmount}
+          />
+          <Button type="submit" loading={transfer.isPending} className="w-full" size="lg">
+            Catat transfer
           </Button>
         </form>
       </Sheet>

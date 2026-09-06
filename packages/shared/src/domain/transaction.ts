@@ -56,6 +56,8 @@ export const AccountSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(["CASH", "BANK", "EWALLET"]),
+  initialBalance: z.number(),
+  balance: z.number(),
   isArchived: z.boolean(),
 });
 
