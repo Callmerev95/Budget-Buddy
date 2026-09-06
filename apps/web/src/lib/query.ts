@@ -19,4 +19,5 @@ export const queryKeys = {
   occurrences: (month: string) => ["occurrences", month] as const,
   categories: ["categories"] as const,
   accounts: ["accounts"] as const,
+  notifications: ["notifications"] as const,
 };

@@ -60,6 +60,7 @@ function invalidateAll() {
   void queryClient.invalidateQueries({ queryKey: queryKeys.transactions });
   void queryClient.invalidateQueries({ queryKey: queryKeys.rules });
   void queryClient.invalidateQueries({ queryKey: ["occurrences"] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
 }
 
 export function useAddTransaction() {
@@ -74,6 +75,7 @@ export function useAddTransaction() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
       void client.invalidateQueries({ queryKey: queryKeys.summary });
+      void client.invalidateQueries({ queryKey: queryKeys.notifications });
     },
   });
 }
@@ -90,6 +92,7 @@ export function useTransfer() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
       void client.invalidateQueries({ queryKey: queryKeys.summary });
+      void client.invalidateQueries({ queryKey: queryKeys.notifications });
       void client.invalidateQueries({ queryKey: queryKeys.accounts });
     },
   });
@@ -122,6 +125,7 @@ export function useDeleteTransaction() {
     onSettled: () => {
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
       void client.invalidateQueries({ queryKey: queryKeys.summary });
+      void client.invalidateQueries({ queryKey: queryKeys.notifications });
     },
   });
 }

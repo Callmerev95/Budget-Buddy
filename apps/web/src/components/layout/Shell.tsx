@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
+  Bell,
   Home,
   Menu,
   PieChart,
@@ -11,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useUnreadCount } from "../../hooks/useNotifications";
 
 const NAV = [
   { to: "/dashboard", label: "Beranda", icon: Home },
@@ -19,6 +21,42 @@ const NAV = [
   { to: "/accounts", label: "Akun", icon: Wallet },
   { to: "/goals", label: "Target", icon: Target },
 ];
+
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-expense px-1 text-[11px] font-bold text-white"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function NotificationNavItem({ onNavigate }: { onNavigate?: () => void }) {
+  const { unreadCount } = useUnreadCount();
+  return (
+    <NavLink
+      to="/notifications"
+      onClick={onNavigate}
+      aria-label={
+        unreadCount > 0 ? `Notifikasi, ${unreadCount} belum dibaca` : "Notifikasi"
+      }
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium transition-colors ${
+          isActive
+            ? "bg-accent/10 text-accent"
+            : "text-muted hover:bg-surface-2 hover:text-text"
+        }`
+      }
+    >
+      <Bell size={18} aria-hidden="true" />
+      Notifikasi
+      <UnreadBadge count={unreadCount} />
+    </NavLink>
+  );
+}
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -41,6 +79,31 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
       ))}
     </>
+  );
+}
+
+function MobileBellButton() {
+  const navigate = useNavigate();
+  const { unreadCount } = useUnreadCount();
+  return (
+    <button
+      type="button"
+      onClick={() => navigate("/notifications")}
+      aria-label={
+        unreadCount > 0 ? `Notifikasi, ${unreadCount} belum dibaca` : "Notifikasi"
+      }
+      className="relative rounded-control p-2 text-muted hover:bg-surface-2 hover:text-text"
+    >
+      <Bell size={20} aria-hidden="true" />
+      {unreadCount > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-expense px-0.5 text-[10px] font-bold text-white"
+        >
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -96,6 +159,7 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
             <Settings size={18} aria-hidden="true" />
             Pengaturan
           </NavLink>
+          <NotificationNavItem />
         </div>
       </aside>
 
@@ -107,19 +171,22 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
           </span>
           <span className="text-[15px] font-semibold tracking-tight">Budget Buddy</span>
         </span>
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
-          className="rounded-control p-2 text-muted hover:bg-surface-2 hover:text-text"
-        >
-          {menuOpen ? (
-            <X size={20} aria-hidden="true" />
-          ) : (
-            <Menu size={20} aria-hidden="true" />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <MobileBellButton />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+            className="rounded-control p-2 text-muted hover:bg-surface-2 hover:text-text"
+          >
+            {menuOpen ? (
+              <X size={20} aria-hidden="true" />
+            ) : (
+              <Menu size={20} aria-hidden="true" />
+            )}
+          </button>
+        </div>
       </header>
       {menuOpen && (
         <nav

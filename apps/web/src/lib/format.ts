@@ -79,3 +79,24 @@ const isoDayFormatter = new Intl.DateTimeFormat("en-CA", {
 export function toCalendarDay(value: Date | string = new Date()): string {
   return isoDayFormatter.format(new Date(value));
 }
+
+/**
+ * Waktu relatif Bahasa Indonesia ("5 mnt lalu", "3 jam lalu", "kemarin").
+ * Menerima `now` sebagai parameter agar deterministik dan bisa diuji.
+ */
+export function formatRelative(value: Date | string, now: Date = new Date()): string {
+  const diffMs = now.getTime() - new Date(value).getTime();
+  const minutes = Math.floor(diffMs / 60_000);
+
+  if (minutes < 1) return "baru saja";
+  if (minutes < 60) return `${minutes} mnt lalu`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "kemarin";
+  if (days < 7) return `${days} hari lalu`;
+
+  return formatShortDate(value);
+}

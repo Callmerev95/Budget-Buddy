@@ -3,6 +3,8 @@ import {
   formatAmount,
   formatCompactCurrency,
   formatCurrency,
+  formatRelative,
+  formatShortDate,
   toCalendarDay,
 } from "./format.js";
 
@@ -46,5 +48,39 @@ describe("toCalendarDay", () => {
 
   it("konsisten untuk siang hari", () => {
     expect(toCalendarDay("2026-03-11T05:00:00.000Z")).toBe("2026-03-11");
+  });
+});
+
+describe("formatRelative", () => {
+  const now = new Date("2026-09-06T12:00:00+07:00");
+
+  it("di bawah semenit → baru saja", () => {
+    expect(formatRelative(new Date("2026-09-06T11:59:40+07:00"), now)).toBe("baru saja");
+  });
+
+  it("menit → 'N mnt lalu'", () => {
+    expect(formatRelative(new Date("2026-09-06T11:15:00+07:00"), now)).toBe(
+      "45 mnt lalu",
+    );
+  });
+
+  it("jam → 'N jam lalu'", () => {
+    expect(formatRelative(new Date("2026-09-06T09:00:00+07:00"), now)).toBe("3 jam lalu");
+  });
+
+  it("kemarin untuk 1 hari", () => {
+    expect(formatRelative(new Date("2026-09-05T12:00:00+07:00"), now)).toBe("kemarin");
+  });
+
+  it("hari untuk 2–6 hari", () => {
+    expect(formatRelative(new Date("2026-09-03T12:00:00+07:00"), now)).toBe(
+      "3 hari lalu",
+    );
+  });
+
+  it("tanggal penuh untuk 7 hari ke atas", () => {
+    expect(formatRelative(new Date("2026-08-20T12:00:00+07:00"), now)).toBe(
+      formatShortDate("2026-08-20T12:00:00+07:00"),
+    );
   });
 });

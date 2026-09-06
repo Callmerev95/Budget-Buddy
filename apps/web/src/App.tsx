@@ -18,6 +18,7 @@ import { BudgetsPage } from "./pages/BudgetsPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { GoalsPage } from "./pages/GoalsPage";
 import { ReportsPage } from "./pages/ReportsPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 
@@ -70,6 +71,7 @@ function App() {
                 <Route path="/accounts" element={<AccountsPage />} />
                 <Route path="/goals" element={<GoalsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
