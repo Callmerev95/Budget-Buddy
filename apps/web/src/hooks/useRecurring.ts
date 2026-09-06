@@ -30,6 +30,7 @@ export function usePayOccurrence() {
       void client.invalidateQueries({ queryKey: ["occurrences"] });
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
       void client.invalidateQueries({ queryKey: queryKeys.summary });
+      void client.invalidateQueries({ queryKey: queryKeys.notifications });
     },
   });
 }
