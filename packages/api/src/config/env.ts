@@ -13,6 +13,15 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL wajib diisi"),
 
+  /**
+   * Koneksi langsung/session mode untuk Prisma CLI (migrate, studio).
+   * Tidak dipakai runtime — runtime lewat DATABASE_URL pooler.
+   * Opsional di sini karena Vercel tidak memegang kredensial database;
+   * kalau kosong, prisma.config.ts melewatkan datasource dan `migrate`
+   * menolak dengan pesan jelas.
+   */
+  DIRECT_URL: z.string().min(1).optional(),
+
   SUPABASE_URL: z.string().url("SUPABASE_URL harus berupa URL yang valid"),
   SUPABASE_ANON_KEY: z.string().min(1, "SUPABASE_ANON_KEY wajib diisi"),
 
