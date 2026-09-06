@@ -1,5 +1,45 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
+
+/**
+ * Memuat `.env` dari root monorepo.
+ *
+ * `dotenv/config` polos mencari `.env` di process.cwd(), tapi script
+ * workspace npm (`npm run dev:api`) berjalan dengan cwd = packages/api,
+ * sehingga `.env` tidak pernah ketemu dan validasi selalu gagal. Fungsi ini
+ * berjalan naik dari lokasi file ini sampai menemukan `.env`.
+ * Di Vercel tidak ada file `.env` — nilai berasal dari platform, dan fungsi
+ * ini tidak melakukan apa-apa.
+ */
+function loadDotEnv(): void {
+  // Untuk test hermetik: DOTENV_PATH=none melewatkan pemuatan file,
+  // sehingga test mengontrol environment sepenuhnya lewat process.env.
+  if (process.env.DOTENV_PATH === "none") return;
+
+  const explicit = process.env.DOTENV_PATH;
+  if (explicit) {
+    if (fs.existsSync(explicit)) dotenv.config({ path: explicit });
+    return;
+  }
+
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (fs.existsSync(path.join(dir, ".env"))) {
+      dotenv.config({ path: path.join(dir, ".env") });
+      return;
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+}
+
+loadDotEnv();
 
 /**
  * Validasi environment saat boot.
@@ -38,7 +78,10 @@ const envSchema = z.object({
   /** Melindungi endpoint cron dari pemanggilan pihak luar. */
   CRON_SECRET: z.string().min(16, "CRON_SECRET minimal 16 karakter").optional(),
 
-  PORT: z.coerce.number().int().positive().default(5000),
+  // Default 5001, bukan 5000: port 5000 dipakai AirPlay Receiver bawaan
+  // macOS (menjawab request non-AirPlay dengan 403). Hanya untuk lokal;
+  // Vercel menentukan port-nya sendiri.
+  PORT: z.coerce.number().int().positive().default(5001),
 });
 
 export type Env = z.infer<typeof envSchema>;

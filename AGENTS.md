@@ -8,7 +8,7 @@ Konvensi kerja untuk Budget Buddy v2. Baca ini sebelum mengubah kode.
 npm install              # sekali di root, npm workspaces
 npm run prisma:generate  # wajib sebelum typecheck pertama
 npm run dev              # web di :5173
-npm run dev:api          # api di :5000
+npm run dev:api          # api di :5001
 npm run lint             # eslint, harus 0 error
 npm run typecheck        # tsc di root + semua workspace
 npm test                 # vitest di semua workspace

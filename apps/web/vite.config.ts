@@ -33,7 +33,7 @@ export default defineConfig({
       // Di produksi web dan API berbagi origin. Proxy ini menyamakan
       // perilaku tersebut saat pengembangan lokal.
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://localhost:5001",
         changeOrigin: false,
       },
     },
