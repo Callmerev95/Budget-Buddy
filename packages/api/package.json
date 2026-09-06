@@ -5,12 +5,16 @@
   "type": "module",
   "description": "Backend Budget Buddy: Express + Prisma, dijalankan sebagai Vercel Function.",
   "exports": {
-    ".": "./src/app.ts"
+    ".": {
+      "types": "./src/app.ts",
+      "default": "./dist/app.js"
+    }
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "build": "tsup"
   },
   "dependencies": {
     "@budget-buddy/shared": "*",
@@ -32,6 +36,11 @@
     "@types/express": "5.0.6",
     "@types/pg": "8.23.1",
     "@types/web-push": "3.6.4",
+    "tsup": "8.5.1",
     "tsx": "4.23.13"
-  }
+  },
+  "types": "./src/app.ts",
+  "files": [
+    "dist"
+  ]
 }

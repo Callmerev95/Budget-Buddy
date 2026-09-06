@@ -24,7 +24,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "vercel-build": "prisma generate && npm run build"
+    "vercel-build": "npm run prisma:generate && npm run build:api && npm run build",
+    "build:api": "npm run build --workspace=@budget-buddy/api"
   },
   "repository": {
     "type": "git",
