@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { registerSchema } from "@budget-buddy/shared";
 import type { RegisterInput } from "@budget-buddy/shared";
 import { AuthLayout } from "../components/auth/AuthLayout";
+import { CaptchaField } from "../components/auth/CaptchaField";
 import { Field } from "../components/ui/Field";
 import { Button } from "../components/ui/Button";
 
@@ -17,6 +18,7 @@ const RegisterPage = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -34,7 +36,10 @@ const RegisterPage = () => {
       const { error } = await supabase.auth.signUp({
         email: validation.data.email,
         password: validation.data.password,
-        options: { data: { full_name: validation.data.name } },
+        options: {
+          data: { full_name: validation.data.name },
+          ...(captchaToken ? { captchaToken } : {}),
+        },
       });
 
       if (error) {
@@ -109,6 +114,7 @@ const RegisterPage = () => {
           )}
           {showPassword ? "Sembunyikan" : "Tampilkan"}
         </button>
+        <CaptchaField onToken={setCaptchaToken} />
         <Button type="submit" loading={loading} size="lg" className="w-full">
           Daftar
         </Button>

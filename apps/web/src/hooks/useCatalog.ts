@@ -84,6 +84,7 @@ export interface GoalRow {
   target: number;
   saved: number;
   targetDate: string | null;
+  createdAt: string;
 }
 
 export function useGoals() {
@@ -149,5 +150,22 @@ export function useDeleteAccount() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: queryKeys.accounts });
     },
+  });
+}
+
+export interface CompareData {
+  month: string;
+  previousMonth: string;
+  current: { income: number; expense: number };
+  previous: { income: number; expense: number };
+  deltas: Array<{ name: string; current: number; previous: number }>;
+}
+
+export function useCompare(month: string) {
+  return useQuery({
+    queryKey: ["compare", month],
+    queryFn: async () =>
+      (await api.get<{ data: CompareData }>("/reports/compare", { params: { month } }))
+        .data.data,
   });
 }

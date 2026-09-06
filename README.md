@@ -2,7 +2,7 @@
 
 Aplikasi pencatat keuangan personal: jatah harian, tagihan tetap, dan laporan pengeluaran.
 
-> **Status: v2 sedang dikerjakan.** Fondasi (Fase 0) selesai. Auth Supabase penuh, data model baru, dan redesign antarmuka masih dalam proses. Lihat [Peta jalan](#peta-jalan).
+> **Status: v2 selesai.** Seluruh fase (0–5) sudah live di produksi.
 
 ## Stack
 
@@ -58,24 +58,27 @@ Keenam perintah itu dijalankan CI pada setiap push dan pull request.
 
 ## Fitur
 
-Saat ini:
-
-- Jatah harian dihitung dari pemasukan, target tabungan, dan tagihan tetap
-- Pencatatan pengeluaran per kategori
-- Manajemen tagihan tetap dengan pengingat harian
-- Laporan pengeluaran harian dengan grafik
-- Mode terang dan gelap
+- Jatah harian dihitung server dari pemasukan, target tabungan, tagihan tetap, dan sisa hari bulan berjalan
+- Pencatatan pemasukan dan pengeluaran per kategori, dengan akun terpisah (tunai, bank, e-wallet)
+- Transfer antar akun yang tercatat dua sisi
+- Tagihan rutin dengan pengingat harian, occurrence per periode, dan opsi bayar/lewati
+- Budget amplop per kategori dengan peringatan 85% dan 100%
+- Target tabungan dengan progres dan estimasi tercapai
+- Laporan tren bulanan, rincian kategori, banding dengan bulan lalu, dan export CSV
+- Mode terang, gelap, dan mengikuti sistem; layout mobile + desktop
+- PWA: install, offline shell, push notification pengingat tagihan
+- Hapus akun penuh (data + login) dari Pengaturan
 
 ## Peta jalan
 
 | Fase | Isi                                                                      | Status  |
 | ---- | ------------------------------------------------------------------------ | ------- |
 | 0    | Monorepo, tooling, CI, validasi environment, Express di Vercel            | Selesai |
-| 1    | Auth Supabase penuh, custom SMTP, CAPTCHA, pengetatan keamanan            | Belum   |
-| 2    | Data model baru: akun, kategori, budget, goals, transaksi berulang        | Belum   |
-| 3    | Service layer ter-scope pengguna, matematika uang di server, cron batched | Belum   |
-| 4    | Redesign antarmuka, token CSS, layout desktop, aksesibilitas, PWA         | Belum   |
-| 5    | Pemasukan, transfer antar akun, ekspor CSV, banding periode               | Belum   |
+| 1    | Auth Supabase penuh, custom SMTP, CAPTCHA, pengetatan keamanan            | Selesai |
+| 2    | Data model baru: akun, kategori, budget, goals, transaksi berulang        | Selesai |
+| 3    | Service layer ter-scope pengguna, matematika uang di server, cron batched | Selesai |
+| 4    | Redesign antarmuka, token CSS, layout desktop, aksesibilitas, PWA         | Selesai |
+| 5    | Pemasukan, transfer antar akun, ekspor CSV, banding periode               | Selesai |
 
 ## Konvensi
 

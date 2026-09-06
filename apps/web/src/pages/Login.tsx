@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { loginSchema } from "@budget-buddy/shared";
 import type { LoginInput } from "@budget-buddy/shared";
 import { AuthLayout } from "../components/auth/AuthLayout";
+import { CaptchaField } from "../components/auth/CaptchaField";
 import { Field } from "../components/ui/Field";
 import { Button } from "../components/ui/Button";
 
@@ -16,6 +17,7 @@ const LoginPage = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -30,7 +32,10 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword(validation.data);
+      const { error } = await supabase.auth.signInWithPassword({
+        ...validation.data,
+        options: captchaToken ? { captchaToken } : undefined,
+      });
 
       if (error) {
         toast.error(
@@ -104,6 +109,7 @@ const LoginPage = () => {
             </Link>
           </div>
         </div>
+        <CaptchaField onToken={setCaptchaToken} />
         <Button type="submit" loading={loading} size="lg" className="w-full">
           Masuk
         </Button>

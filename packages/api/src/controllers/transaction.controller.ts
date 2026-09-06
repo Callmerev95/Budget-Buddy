@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
-import { createTransactionSchema } from "@budget-buddy/shared";
+import { randomUUID } from "node:crypto";
+import {
+  createTransactionSchema,
+  createTransferSchema,
+  exportQuerySchema,
+} from "@budget-buddy/shared";
 import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { sendPushNotification } from "../lib/push.js";
@@ -9,6 +14,7 @@ import { ensureDefaultAccount, resolveCategoryId } from "../lib/references.js";
 
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE = 50;
+const MAX_EXPORT_ROWS = 5000;
 
 function formatRupiah(amount: number): string {
   return `Rp ${amount.toLocaleString("id-ID")}`;
@@ -48,8 +54,9 @@ export async function createTransaction(req: Request, res: Response): Promise<vo
   const input = createTransactionSchema.parse(req.body);
 
   const accountId = input.accountId ?? (await ensureDefaultAccount(userId));
+  const kind = input.type === "INCOME" ? "INCOME" : "EXPENSE";
   const categoryId =
-    input.categoryId ?? (await resolveCategoryId(userId, input.category));
+    input.categoryId ?? (await resolveCategoryId(userId, input.category, kind));
 
   // Pastikan akun milik pengguna (bila client mengirim ID langsung).
   const account = await prisma.account.findFirst({
@@ -61,12 +68,21 @@ export async function createTransaction(req: Request, res: Response): Promise<vo
     throw new NotFoundError("Akun tidak ditemukan.");
   }
 
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, OR: [{ userId: null }, { userId }] },
+    select: { id: true },
+  });
+
+  if (!category) {
+    throw new NotFoundError("Kategori tidak ditemukan.");
+  }
+
   const transaction = await prisma.transaction.create({
     data: {
       description: input.description,
       amount: input.amount,
-      type: "EXPENSE",
-      categoryId,
+      type: input.type,
+      categoryId: category.id,
       accountId: account.id,
       userId,
     },
@@ -176,4 +192,118 @@ export async function deleteTransaction(req: Request, res: Response): Promise<vo
   }
 
   res.status(200).json({ message: "Transaksi berhasil dihapus." });
+}
+
+/**
+ * Transfer antar akun milik pengguna yang sama.
+ *
+ * Dicatat sebagai dua baris atomik dengan transferGroupId sama: baris keluar
+ * bernilai negatif, baris masuk positif. Tanda inilah yang menentukan arah —
+ * field terpisah tidak diperlukan.
+ */
+export async function createTransfer(req: Request, res: Response): Promise<void> {
+  const userId = getProfileId(req);
+  const input = createTransferSchema.parse(req.body);
+
+  const accounts = await prisma.account.findMany({
+    where: { id: { in: [input.fromAccountId, input.toAccountId] }, userId },
+    select: { id: true },
+  });
+
+  if (accounts.length !== 2) {
+    throw new NotFoundError("Salah satu akun tidak ditemukan.");
+  }
+
+  const groupId = randomUUID();
+  const description =
+    input.description === "Transfer" ? "Transfer antar akun" : input.description;
+
+  const [outgoing, incoming] = await prisma.$transaction([
+    prisma.transaction.create({
+      data: {
+        description: `${description} (keluar)`,
+        amount: -input.amount,
+        type: "TRANSFER",
+        categoryId: await resolveCategoryId(userId, "Lainnya", "EXPENSE"),
+        accountId: input.fromAccountId,
+        transferGroupId: groupId,
+        userId,
+      },
+    }),
+    prisma.transaction.create({
+      data: {
+        description: `${description} (masuk)`,
+        amount: input.amount,
+        type: "TRANSFER",
+        categoryId: await resolveCategoryId(userId, "Lainnya", "EXPENSE"),
+        accountId: input.toAccountId,
+        transferGroupId: groupId,
+        userId,
+      },
+    }),
+  ]);
+
+  res.status(201).json({
+    message: "Transfer berhasil dicatat.",
+    data: { groupId, outgoingId: outgoing.id, incomingId: incoming.id },
+  });
+}
+
+function csvCell(value: string | number): string {
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/**
+ * Export CSV untuk rentang tanggal. Dibatasi 5000 baris (jauh di bawah
+ * limit payload 4.5MB Vercel) — sekaligus menjadi jalur backup manual,
+ * mengingat Free plan tidak menyediakan backup yang bisa diunduh.
+ */
+export async function exportTransactionsCsv(req: Request, res: Response): Promise<void> {
+  const userId = getProfileId(req);
+  const { from, to } = exportQuerySchema.parse(req.query);
+
+  const rows = await prisma.transaction.findMany({
+    where: {
+      userId,
+      occurredAt: {
+        gte: new Date(from),
+        lt: new Date(new Date(to).getTime() + 86_400_000),
+      },
+    },
+    orderBy: { occurredAt: "asc" },
+    take: MAX_EXPORT_ROWS + 1,
+    include: {
+      account: { select: { name: true } },
+      category: { select: { name: true } },
+    },
+  });
+
+  const truncated = rows.length > MAX_EXPORT_ROWS;
+  const data = truncated ? rows.slice(0, MAX_EXPORT_ROWS) : rows;
+
+  const lines = ["tanggal,jenis,deskripsi,kategori,akun,nominal"];
+  for (const row of data) {
+    lines.push(
+      [
+        csvCell(row.occurredAt.toISOString().slice(0, 10)),
+        csvCell(row.type),
+        csvCell(row.description),
+        csvCell(row.category.name),
+        csvCell(row.account.name),
+        csvCell(row.amount),
+      ].join(","),
+    );
+  }
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="budget-buddy-${from}_${to}.csv"`,
+  );
+  res
+    .status(200)
+    .send(
+      `\uFEFF${lines.join("\n")}${truncated ? "\n# TERPOTONG: lebih dari 5000 baris, persempit rentang" : ""}`,
+    );
 }

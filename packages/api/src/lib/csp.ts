@@ -18,7 +18,8 @@ export function buildCspDirectives(options: CspOptions): Record<string, string[]
     "default-src": ["'self'"],
     // Tanpa 'unsafe-inline' dan tanpa eval: satu-satunya script adalah
     // bundle Vite. Tidak ada inline script di index.html.
-    "script-src": ["'self'"],
+    // challenges.cloudflare.com untuk widget Turnstile di halaman auth.
+    "script-src": ["'self'", "https://challenges.cloudflare.com"],
     // 'unsafe-inline' diperlukan karena framer-motion dan beberapa komponen
     // menulis gaya lewat atribut style saat runtime. Script tetap ketat.
     "style-src": ["'self'", "'unsafe-inline'"],
@@ -27,6 +28,7 @@ export function buildCspDirectives(options: CspOptions): Record<string, string[]
     // Browser hanya memanggil API Supabase milik sendiri. Tanpa ini, login,
     // signup, dan refresh token diblokir browser.
     "connect-src": ["'self'", `https://${supabaseHost}`],
+    "frame-src": ["'self'", "https://challenges.cloudflare.com"],
     "frame-ancestors": ["'none'"],
     "form-action": ["'self'"],
     "base-uri": ["'self'"],

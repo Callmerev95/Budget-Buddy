@@ -5,7 +5,12 @@ import { Field } from "./Field";
 import { AmountInput } from "./AmountInput";
 import { Button } from "./Button";
 import { toErrorMessage } from "../../lib/api";
-import { DEFAULT_EXPENSE_CATEGORY, EXPENSE_CATEGORIES } from "@budget-buddy/shared";
+import {
+  DEFAULT_EXPENSE_CATEGORY,
+  DEFAULT_INCOME_CATEGORY,
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+} from "@budget-buddy/shared";
 import { useAddTransaction } from "../../hooks/useFinance";
 import { useCategories } from "../../hooks/useCatalog";
 
@@ -18,14 +23,22 @@ export function AddTransactionSheet({
 }) {
   const add = useAddTransaction();
   const { data: categories } = useCategories();
+  const [isIncome, setIsIncome] = useState(false);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState(0);
   const [category, setCategory] = useState<string>(DEFAULT_EXPENSE_CATEGORY);
   const [error, setError] = useState<string | undefined>();
 
-  const expenseCategories = categories
-    ?.filter((c) => c.kind === "EXPENSE")
-    .map((c) => c.name) ?? [...EXPENSE_CATEGORIES];
+  const kind = isIncome ? "INCOME" : "EXPENSE";
+  const available = categories?.filter((c) => c.kind === kind).map((c) => c.name) ?? [
+    ...(isIncome ? INCOME_CATEGORIES : EXPENSE_CATEGORIES),
+  ];
+
+  const switchKind = (income: boolean) => {
+    setIsIncome(income);
+    setCategory(income ? DEFAULT_INCOME_CATEGORY : DEFAULT_EXPENSE_CATEGORY);
+    setError(undefined);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +52,13 @@ export function AddTransactionSheet({
     }
     setError(undefined);
     try {
-      await add.mutateAsync({ description: description.trim(), amount, category });
-      toast.success("Transaksi tersimpan.");
+      await add.mutateAsync({
+        description: description.trim(),
+        amount,
+        category,
+        type: kind,
+      });
+      toast.success(isIncome ? "Pemasukan tersimpan." : "Pengeluaran tersimpan.");
       setDescription("");
       setAmount(0);
       onClose();
@@ -53,14 +71,36 @@ export function AddTransactionSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Catat pengeluaran"
-      description="Tersimpan ke akun Cash bila akun tidak dipilih."
+      title={isIncome ? "Catat pemasukan" : "Catat pengeluaran"}
+      description="Tersimpan ke akun pertama bila akun tidak dipilih."
     >
       <form onSubmit={submit} className="space-y-4">
+        <div className="flex gap-2" role="group" aria-label="Jenis transaksi">
+          <button
+            type="button"
+            aria-pressed={!isIncome}
+            onClick={() => switchKind(false)}
+            className={`flex-1 rounded-control px-3 py-2 text-sm font-medium transition-colors ${
+              !isIncome ? "bg-expense/10 text-expense" : "text-muted hover:bg-surface-2"
+            }`}
+          >
+            Keluar
+          </button>
+          <button
+            type="button"
+            aria-pressed={isIncome}
+            onClick={() => switchKind(true)}
+            className={`flex-1 rounded-control px-3 py-2 text-sm font-medium transition-colors ${
+              isIncome ? "bg-income/10 text-income" : "text-muted hover:bg-surface-2"
+            }`}
+          >
+            Masuk
+          </button>
+        </div>
         <AmountInput label="Nominal" value={amount} onChange={setAmount} />
         <Field
           label="Deskripsi"
-          placeholder="Mis. makan siang"
+          placeholder={isIncome ? "Mis. gaji bulanan" : "Mis. makan siang"}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={120}
@@ -74,11 +114,11 @@ export function AddTransactionSheet({
           </label>
           <select
             id="txn-category"
-            value={category}
+            value={available.includes(category) ? category : (available[0] ?? "")}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-control border border-border bg-surface px-4 py-3 text-[15px] text-text focus:border-accent focus:outline-none"
           >
-            {expenseCategories.map((name) => (
+            {available.map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>

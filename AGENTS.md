@@ -73,5 +73,5 @@ import { prisma } from "../lib/prisma.js"; // instance tunggal, jangan buat baru
 
 - Vercel Hobby membatasi cron ke sekali sehari dengan presisi ±59 menit. `0 1 * * *` UTC = 08:00 WIB.
 - Session Supabase disimpan di localStorage, jadi masih rentan XSS. Mitigasinya CSP ketat dan nol `dangerouslySetInnerHTML`.
-- Deteksi "tagihan sudah dibayar" di `cron.controller.ts` masih memakai pencocokan teks deskripsi. Tabel `RecurringOccurrence` di Fase 2 akan menggantikannya dengan kunci idempoten.
+- Cron idempoten by `(ruleId, periodKey)` — run ulang aman. Engine di `services/recurring.ts`, store diabstraksi agar bisa diuji tanpa DB.
 - Tema lewat `ThemeProvider` (`apps/web/src/theme/`), bukan prop-drilling. Token di `styles/tokens.css`, dipetakan di `tailwind.config.js`.

@@ -6,11 +6,13 @@ import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 import { forgotPasswordSchema } from "@budget-buddy/shared";
 import { AuthLayout } from "../components/auth/AuthLayout";
+import { CaptchaField } from "../components/auth/CaptchaField";
 import { Field } from "../components/ui/Field";
 import { Button } from "../components/ui/Button";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -27,6 +29,7 @@ const ForgotPassword = () => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(validation.data.email, {
         redirectTo: `${window.location.origin}/reset-password`,
+        ...(captchaToken ? { captchaToken } : {}),
       });
 
       if (error) {
@@ -79,6 +82,7 @@ const ForgotPassword = () => {
             icon={<Mail size={18} aria-hidden="true" />}
             required
           />
+          <CaptchaField onToken={setCaptchaToken} />
           <Button type="submit" loading={loading} size="lg" className="w-full">
             Kirim tautan reset
           </Button>

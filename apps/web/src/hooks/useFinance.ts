@@ -69,10 +69,28 @@ export function useAddTransaction() {
       description: string;
       amount: number;
       category: string;
+      type?: "INCOME" | "EXPENSE";
     }) => (await api.post("/transactions", input)).data,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
       void client.invalidateQueries({ queryKey: queryKeys.summary });
+    },
+  });
+}
+
+export function useTransfer() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      fromAccountId: string;
+      toAccountId: string;
+      amount: number;
+      description?: string;
+    }) => (await api.post("/transactions/transfer", input)).data,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.transactions });
+      void client.invalidateQueries({ queryKey: queryKeys.summary });
+      void client.invalidateQueries({ queryKey: queryKeys.accounts });
     },
   });
 }
