@@ -74,6 +74,32 @@ export function startOfDayUtc(now: Date, timeZone = JAKARTA_TIME_ZONE): Date {
   return new Date(Date.UTC(year, month - 1, day, 0, -offsetMinutes, 0, 0));
 }
 
+/**
+ * Awal bulan tertentu sebagai instant UTC menurut zona waktu pengguna.
+ * Untuk agregat lintas bulan (tren laporan).
+ */
+export function monthStartUtc(year: number, month: number, timeZone: string): Date {
+  const probe = new Date(Date.UTC(year, month - 1, 15));
+  const offsetMinutes = timeZoneOffsetMinutes(probe, timeZone);
+
+  return new Date(Date.UTC(year, month - 1, 1, 0, -offsetMinutes, 0, 0));
+}
+
+/** Geser (year, month) mundur sejauh `back` bulan. */
+export function shiftMonth(
+  year: number,
+  month: number,
+  back: number,
+): { year: number; month: number } {
+  const total = year * 12 + (month - 1) - back;
+  return { year: Math.floor(total / 12), month: (total % 12) + 1 };
+}
+
+/** Kunci periode YYYY-MM. */
+export function toPeriodKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
 /** Selisih menit antara zona waktu tersebut dan UTC pada instant yang diberikan. */
 function timeZoneOffsetMinutes(at: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {

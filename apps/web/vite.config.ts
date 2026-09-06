@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
@@ -6,7 +7,25 @@ import { defineConfig } from "vitest/config";
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      manifest: false,
+      includeAssets: ["icons/*.png", "manifest.json"],
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,png,svg,woff2}"],
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
+  // .env tinggal di root monorepo, bukan apps/web. Hanya variabel
+  // VITE_* yang di-inline ke bundle, jadi aman.
+  envDir: path.resolve(rootDir, "../.."),
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "./src"),
