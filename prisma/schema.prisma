@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../packages/api/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL dikonfigurasi di prisma.config.ts (Prisma 7).
+}
+
+model User {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  password         String?
+  name             String
+  supabase_id      String?        @unique
+  dailyLimit       Float          @default(0)
+  monthlyIncome    Float          @default(0)
+  savingsTarget    Float          @default(0)
+  isPercentTarget  Boolean        @default(false)
+  pushSubscription String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  logs             DailyLog[]
+  fixedExpenses    FixedExpense[]
+}
+
+model DailyLog {
+  id          String   @id @default(uuid())
+  description String
+  amount      Float
+  category    String
+  date        DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date(sort: Desc)])
+}
+
+model FixedExpense {
+  id      String @id @default(uuid())
+  name    String
+  amount  Float
+  dueDate Int
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+}
