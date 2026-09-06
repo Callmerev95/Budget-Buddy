@@ -86,6 +86,7 @@ describe("proteksi auth", () => {
     "/api/transactions",
     "/api/transactions/summary",
     "/api/fixed-expenses",
+    "/api/recurring",
   ])("menolak %s tanpa token", async (path) => {
     const res = await request(path);
 

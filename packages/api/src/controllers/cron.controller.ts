@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
-import { prisma } from "../lib/prisma.js";
-import { sendPushNotification } from "../lib/push.js";
+import { prismaSystem } from "../lib/prisma.js";
 import { AppError } from "../lib/errors.js";
-import { effectiveDueDate } from "../domain/finance.js";
-import { startOfMonthUtc, toCalendarDay } from "../lib/calendar.js";
+import { JAKARTA_TIME_ZONE, toCalendarDay } from "../lib/calendar.js";
+import { createPrismaStore } from "../services/recurringStore.js";
+import { processRule, type EngineOutcome } from "../services/recurring.js";
 
-/** Jumlah tagihan yang diproses per invocation, menjaga durasi function tetap aman. */
+/** Jumlah rule yang diproses per invocation, menjaga durasi function tetap aman. */
 const BATCH_SIZE = 200;
 
 /**
@@ -28,57 +28,60 @@ function assertCronCaller(req: Request): void {
 /**
  * Pengingat tagihan harian, dipanggil oleh Vercel Cron.
  *
- * Catatan keterbatasan yang diketahui: deteksi "sudah dibayar" masih memakai
- * pencocokan teks deskripsi, sehingga transaksi lain yang memuat nama tagihan
- * bisa dianggap pembayaran. Tabel `RecurringOccurrence` pada Fase 2 akan
- * menggantikan pendekatan ini dengan kunci idempoten `(ruleId, periodKey)`.
+ * Idempoten by `(ruleId, periodKey)`: run ulang untuk periode yang sama
+ * tidak membuat occurrence ganda dan tidak mengirim notifikasi ganda.
+ * Karena itu tidak perlu state cursor antar invocation — run yang kehabisan
+ * waktu 300 detik cukup dijalankan ulang, sisanya otomatis dilewati.
+ * Bila skala menuntut, tambahkan cursor berbasis rule id di sini.
  */
 export async function runDailyReminders(req: Request, res: Response): Promise<void> {
   assertCronCaller(req);
 
   const now = new Date();
-  const [yearText, monthText, dayText] = toCalendarDay(now).split("-");
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const today = Number(dayText);
-  const monthStart = startOfMonthUtc(now);
+  const store = createPrismaStore();
 
-  const expenses = await prisma.recurringRule.findMany({
+  const rules = await prismaSystem.recurringRule.findMany({
     where: { isActive: true },
     take: BATCH_SIZE,
     orderBy: { id: "asc" },
-    select: { id: true, name: true, amount: true, dayOfMonth: true, userId: true },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      amount: true,
+      accountId: true,
+      categoryId: true,
+      frequency: true,
+      dayOfMonth: true,
+      endOfMonthClamp: true,
+      autoPost: true,
+      isActive: true,
+      user: { select: { timezone: true } },
+    },
   });
 
-  let notified = 0;
+  const tally: Record<EngineOutcome, number> = {
+    waiting: 0,
+    reminded: 0,
+    posted: 0,
+    skipped: 0,
+    unsupported: 0,
+  };
 
-  for (const expense of expenses) {
-    if (effectiveDueDate(expense.dayOfMonth, year, month) !== today) continue;
-
-    const alreadyPaid = await prisma.transaction.findFirst({
-      where: {
-        userId: expense.userId,
-        description: { contains: expense.name, mode: "insensitive" },
-        occurredAt: { gte: monthStart },
-      },
-      select: { id: true },
-    });
-
-    if (alreadyPaid) continue;
-
-    await sendPushNotification(expense.userId, {
-      title: `Tagihan ${expense.name}`,
-      body: `Waktunya membayar ${expense.name} sebesar Rp ${expense.amount.toLocaleString("id-ID")}.`,
-      url: "/dashboard",
-    });
-
-    notified += 1;
+  for (const rule of rules) {
+    const outcome = await processRule(
+      store,
+      rule,
+      now,
+      rule.user.timezone || JAKARTA_TIME_ZONE,
+    );
+    tally[outcome] += 1;
   }
 
   res.status(200).json({
     ok: true,
     date: toCalendarDay(now),
-    scanned: expenses.length,
-    notified,
+    scanned: rules.length,
+    ...tally,
   });
 }
