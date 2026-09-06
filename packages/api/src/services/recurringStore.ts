@@ -1,4 +1,5 @@
 import { prismaSystem } from "../lib/prisma.js";
+import { recordNotification } from "../lib/notifications.js";
 import { sendPushNotification } from "../lib/push.js";
 import type { EngineStore } from "./recurring.js";
 
@@ -32,7 +33,12 @@ export function createPrismaStore(): EngineStore {
       prismaSystem.recurringOccurrence
         .update({ where: { id: occurrenceId }, data: { notifiedAt: at } })
         .then(() => undefined),
-    notify: (userId, title, body) =>
-      sendPushNotification(userId, { title, body, url: "/dashboard" }),
+    // notify hanya dipanggil engine pada jalur pengingat (bukan autopost),
+    // jadi tipenya selalu BILL_DUE. Autopost dicatat PAYMENT_RECEIVED
+    // oleh pemanggil (cron controller) yang memegang data rule.
+    notify: (userId, title, body) => {
+      void recordNotification(userId, "BILL_DUE", title, body);
+      return sendPushNotification(userId, { title, body, url: "/dashboard" });
+    },
   };
 }

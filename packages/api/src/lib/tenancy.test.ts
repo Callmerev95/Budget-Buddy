@@ -87,7 +87,7 @@ describe("isScopedQuery", () => {
     expect(isScopedQuery(model, "findMany", {})).toBe(true);
   });
 
-  it("berlaku untuk semua 7 model user-owned", () => {
+  it("berlaku untuk semua 8 model user-owned", () => {
     for (const model of [
       "Transaction",
       "Account",
@@ -96,8 +96,15 @@ describe("isScopedQuery", () => {
       "RecurringRule",
       "SavingsGoal",
       "FinancialPlan",
+      "Notification",
     ]) {
       expect(isScopedQuery(model, "findMany", { where: {} })).toBe(false);
     }
+  });
+
+  it("meloloskan tulis notifikasi yang menyebut userId", () => {
+    expect(isScopedQuery("Notification", "create", { data: { userId: "u1" } })).toBe(
+      true,
+    );
   });
 });

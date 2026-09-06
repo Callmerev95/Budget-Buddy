@@ -7,6 +7,7 @@ import {
 } from "@budget-buddy/shared";
 import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
+import { recordNotification } from "../lib/notifications.js";
 import { sendPushNotification } from "../lib/push.js";
 import { NotFoundError } from "../lib/errors.js";
 import { startOfMonthUtc } from "../lib/calendar.js";
@@ -95,6 +96,12 @@ export async function createTransaction(req: Request, res: Response): Promise<vo
     body: `${input.description} sebesar ${formatRupiah(input.amount)}`,
     url: "/dashboard",
   });
+  void recordNotification(
+    userId,
+    "TRANSACTION_RECORDED",
+    "Catatan tersimpan",
+    `${input.description} sebesar ${formatRupiah(input.amount)}.`,
+  );
 
   res
     .status(201)

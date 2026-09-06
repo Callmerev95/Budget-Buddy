@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { prismaSystem } from "../lib/prisma.js";
+import { recordNotification } from "../lib/notifications.js";
 import { AppError } from "../lib/errors.js";
 import { JAKARTA_TIME_ZONE, toCalendarDay } from "../lib/calendar.js";
 import { createPrismaStore } from "../services/recurringStore.js";
@@ -76,6 +77,17 @@ export async function runDailyReminders(req: Request, res: Response): Promise<vo
       rule.user.timezone || JAKARTA_TIME_ZONE,
     );
     tally[outcome] += 1;
+
+    // Autopost tidak melewati notify (bukan pengingat), tapi pembayarannya
+    // tetap dicatat agar muncul di pusat notifikasi.
+    if (outcome === "posted") {
+      void recordNotification(
+        rule.userId,
+        "PAYMENT_RECEIVED",
+        `${rule.name} terbayar otomatis`,
+        `${rule.name} sebesar Rp ${rule.amount.toLocaleString("id-ID")} telah dibayar.`,
+      );
+    }
   }
 
   res.status(200).json({

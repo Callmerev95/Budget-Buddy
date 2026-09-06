@@ -4,6 +4,7 @@ export * from "./domain/transaction.js";
 export * from "./schemas/auth.schema.js";
 export * from "./schemas/catalog.schema.js";
 export * from "./schemas/fixed-expense.schema.js";
+export * from "./schemas/notification.schema.js";
 export * from "./schemas/recurring.schema.js";
 export * from "./schemas/transaction.schema.js";
 export * from "./schemas/transfer.schema.js";

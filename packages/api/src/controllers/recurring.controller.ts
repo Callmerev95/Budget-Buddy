@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { occurrenceMonthSchema } from "@budget-buddy/shared";
 import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
+import { recordNotification } from "../lib/notifications.js";
 import { NotFoundError } from "../lib/errors.js";
 import { AppError } from "../lib/errors.js";
 import { JAKARTA_TIME_ZONE, toCalendarDay } from "../lib/calendar.js";
@@ -106,6 +107,13 @@ export async function payOccurrence(req: Request, res: Response): Promise<void> 
     where: { id: occurrence.id },
     data: { status: "PAID", transactionId: transaction.id },
   });
+
+  void recordNotification(
+    userId,
+    "PAYMENT_RECEIVED",
+    `${occurrence.rule.name} berhasil dibayar`,
+    `Pembayaran ${occurrence.rule.name} sebesar Rp ${occurrence.rule.amount.toLocaleString("id-ID")} tercatat.`,
+  );
 
   res
     .status(200)
