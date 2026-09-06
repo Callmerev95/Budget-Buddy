@@ -1,14 +1,20 @@
 import type { NextFunction, Request, Response } from "express";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { env } from "../config/env.js";
+import { resolveDisplayName } from "../lib/claims.js";
 
 /**
  * Identitas hasil verifikasi token Supabase.
  * Menggantikan `req.user` bertipe `any` di controller lama.
+ *
+ * `userId` adalah Supabase uid (payload.sub). ID ini BUKAN primary key
+ * tabel `User` — translasi uid ke profile id dikerjakan `ensureProfile`,
+ * karena FK (mis. DailyLog.userId) menunjuk ke profile id.
  */
 export interface AuthContext {
   userId: string;
   email: string;
+  name: string | null;
 }
 
 declare global {
@@ -63,7 +69,7 @@ export async function requireAuth(
       return;
     }
 
-    req.auth = { userId, email };
+    req.auth = { userId, email, name: resolveDisplayName(payload) };
     next();
   } catch {
     res.status(401).json({ message: "Sesi sudah berakhir. Silakan masuk kembali." });

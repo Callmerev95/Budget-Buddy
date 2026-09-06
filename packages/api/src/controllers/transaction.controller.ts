@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createTransactionSchema } from "@budget-buddy/shared";
-import { getAuth } from "../middleware/auth.js";
+import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { sendPushNotification } from "../lib/push.js";
 import { NotFoundError } from "../lib/errors.js";
@@ -14,7 +14,7 @@ function formatRupiah(amount: number): string {
 }
 
 export async function createTransaction(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const input = createTransactionSchema.parse(req.body);
 
   const transaction = await prisma.dailyLog.create({
@@ -44,7 +44,7 @@ export async function createTransaction(req: Request, res: Response): Promise<vo
  * berkelanjutan.
  */
 export async function listTransactions(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
 
   const requestedSize = Number(req.query.limit ?? DEFAULT_PAGE_SIZE);
   const pageSize = Number.isFinite(requestedSize)
@@ -71,7 +71,7 @@ export async function listTransactions(req: Request, res: Response): Promise<voi
 
 /** Ringkasan bulan berjalan, dihitung di server dengan zona waktu pengguna. */
 export async function getMonthlySummary(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const monthStart = startOfMonthUtc(new Date());
 
   const [monthly, fixedExpenses, user] = await Promise.all([
@@ -114,7 +114,7 @@ export async function getMonthlySummary(req: Request, res: Response): Promise<vo
 }
 
 export async function deleteTransaction(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const id = req.params.id as string;
 
   const deleted = await prisma.dailyLog.deleteMany({ where: { id, userId } });
