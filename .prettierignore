@@ -1,0 +1,7 @@
+node_modules
+dist
+build
+.vercel
+packages/api/generated
+package-lock.json
+*.md

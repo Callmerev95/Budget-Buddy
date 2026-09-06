@@ -1,93 +1,93 @@
-# 💸 BUDGETBUDDY (Multi-User SaaS)
+# Budget Buddy
 
-> **The Next Gen Financial Framework** — Solusi manajemen keuangan cerdas untuk menguasai arus kas harian dengan presisi tinggi dan antarmuka premium.
+Aplikasi pencatat keuangan personal: jatah harian, tagihan tetap, dan laporan pengeluaran.
 
----
+> **Status: v2 sedang dikerjakan.** Fondasi (Fase 0) selesai. Auth Supabase penuh, data model baru, dan redesign antarmuka masih dalam proses. Lihat [Peta jalan](#peta-jalan).
 
-## 🎭 Vision & Philosophy
+## Stack
 
-Budget Buddy bukan sekadar aplikasi pencatat. Ia lahir dari filosofi kemudahan dan keamanan, dirancang khusus agar Anda bisa fokus merencanakan masa depan tanpa pusing memikirkan angka-angka yang rumit.
+| Lapisan  | Teknologi                                                    |
+| -------- | ------------------------------------------------------------ |
+| Frontend | Vite, React 18, TypeScript, Tailwind CSS, Recharts           |
+| Backend  | Express 5, Prisma 7, dijalankan sebagai Vercel Function       |
+| Database | Supabase Postgres (region Singapore)                         |
+| Auth     | Supabase Auth, token diverifikasi via JWKS                   |
+| Bersama  | Zod di `packages/shared`, satu sumber untuk web dan api       |
+| Hosting  | Vercel, satu project, satu origin                            |
 
-## 🛠️ Tech Stack & Architecture
+## Struktur
 
-Project ini menggunakan arsitektur Monorepo yang terbagi menjadi `client`, `server`, dan `shared` untuk efisiensi maksimal.
+```
+api/index.ts       Vercel Function untuk seluruh /api/*
+apps/web/          Frontend
+packages/api/      Express + Prisma
+packages/shared/   Skema Zod + tipe domain
+prisma/            Skema database
+```
 
-### **Frontend** (Vite + React)
+Monorepo npm workspaces. Web dan API berbagi origin, jadi tidak ada konfigurasi CORS di produksi.
 
-- **Core**: React, React Router DOM, TypeScript.
-- **State & Data**: Zustand & TanStack Query.
-- **UI/UX**: Tailwind CSS, Framer Motion (Animations), Lucide React (Icons).
-- **Visualization**: Recharts.
+## Menjalankan secara lokal
 
-### **Backend** (Node.js + Express)
+Butuh Node.js 20.11+ dan sebuah project Supabase.
 
-- **Runtime**: Node.js via TSX (TypeScript Execution).
-- **Database & ORM**: PostgreSQL via Prisma ORM & Supabase SDK.
-- **Auth**: JSON Web Token (JWT).
-- **Services**: Node-Cron (Task Scheduling) & Web Push Notifications.
+```bash
+git clone https://github.com/Callmerev95/Budget-Buddy.git
+cd Budget-Buddy
+npm install
 
-### **Shared**
+cp .env.example .env      # isi kredensial Supabase
+npm run prisma:generate   # wajib sebelum typecheck pertama
+npm run prisma:migrate    # menyiapkan skema database
 
-- **Validation**: Zod (Shared schemas antara Frontend & Backend).
+npm run dev:api           # http://localhost:5000
+npm run dev               # http://localhost:5173
+```
 
-## ✨ Key Features
+## Perintah
 
-- **Progressive Web App (PWA)**: Aplikasi dapat di-instal langsung di homescreen Android maupun iOS tanpa melalui App Store, lengkap dengan dukungan offline.
-- **Smart Daily Allowance**: Kalkulasi jatah jajan harian otomatis berdasarkan sisa saldo dan rencana keuangan bulanan.
-- **Fixed Expense Control**: Manajemen pengeluaran tetap untuk memastikan tagihan rutin selalu terkontrol.
-- **Live Analytics**: Visualisasi grafik keuangan yang interaktif menggunakan Recharts.
-- **Real-time Push Notifications**: Notifikasi pengingat penting langsung ke browser Anda.
-- **Advanced Auth**: Sistem registrasi, login, hingga reset password via email.
+```bash
+npm run lint          # eslint
+npm run typecheck     # tsc di root + semua workspace
+npm test              # vitest
+npm run format:check  # prettier
+npm run build         # build produksi
+```
 
-## 🛡️ Coding Standards
+Keenam perintah itu dijalankan CI pada setiap push dan pull request.
 
-Kami menerapkan standar kualitas kode yang ketat:
+## Fitur
 
-- **Zero Any Policy**: Penggunaan tipe `any` pada parameter fungsi dilarang keras demi menjamin _type-safety_ dan stabilitas jangka panjang.
-- **Shared Schemas**: Validasi data terpusat menggunakan Zod untuk konsistensi antara UI dan API.
-- **Linting**: Konsistensi penulisan kode dipantau melalui ESLint.
+Saat ini:
 
-## 🚀 Getting Started
+- Jatah harian dihitung dari pemasukan, target tabungan, dan tagihan tetap
+- Pencatatan pengeluaran per kategori
+- Manajemen tagihan tetap dengan pengingat harian
+- Laporan pengeluaran harian dengan grafik
+- Mode terang dan gelap
 
-Ikuti langkah-langkah di bawah ini untuk menjalankan project di lingkungan lokal.
+## Peta jalan
 
-### **1. Clone Repository**
+| Fase | Isi                                                                      | Status  |
+| ---- | ------------------------------------------------------------------------ | ------- |
+| 0    | Monorepo, tooling, CI, validasi environment, Express di Vercel            | Selesai |
+| 1    | Auth Supabase penuh, custom SMTP, CAPTCHA, pengetatan keamanan            | Belum   |
+| 2    | Data model baru: akun, kategori, budget, goals, transaksi berulang        | Belum   |
+| 3    | Service layer ter-scope pengguna, matematika uang di server, cron batched | Belum   |
+| 4    | Redesign antarmuka, token CSS, layout desktop, aksesibilitas, PWA         | Belum   |
+| 5    | Pemasukan, transfer antar akun, ekspor CSV, banding periode               | Belum   |
 
-git clone [https://github.com/callmerev95/budget-buddy.git]
-cd budget-buddy
+## Konvensi
 
-### 2. Setup Backend (Server)
+Lihat [AGENTS.md](./AGENTS.md) untuk aturan yang ditegakkan: nol `any`, semua query ter-scope `userId`, validasi Zod di batas, matematika uang di server, dan penanganan tanggal khusus zona waktu WIB.
 
-1. **Masuk ke folder server**: `cd server`
-2. **Install dependensi**: `npm install`
-3. **Duplikat file `.env.example` menjadi `.env`** dan isi kredensial (Database URL, JWT Secret, VAPID Keys).
-4. **Jalankan migrasi database**: `npx prisma migrate dev`
-5. **Jalankan server**: `npm run dev`
+## Batasan yang diketahui
 
-### 3. Setup Frontend (Client)
+- Vercel Hobby membatasi cron ke sekali sehari dengan presisi ±59 menit, jadi pengingat tagihan tidak bisa mengikuti zona waktu masing-masing pengguna.
+- SMTP bawaan Supabase hanya mengirim ke anggota tim project dengan batas 2 email per jam. Custom SMTP diperlukan agar pengguna lain bisa mendaftar.
+- Project Supabase pada Free plan dapat dijeda setelah tujuh hari aktivitas rendah.
+- Free plan tidak menyediakan backup yang bisa diunduh.
 
-1. **Buka terminal baru dan masuk ke folder client**: `cd client`
-2. **Install dependensi**: `npm install`
-3. **Jalankan aplikasi**: `npm run dev`
+## Lisensi
 
-### 4. Web Push Setup (Optional)
-
-Jika ingin mengaktifkan notifikasi:
-
-- **Generate VAPID keys** di folder server: `npx web-push generate-vapid-keys`
-- **Masukkan hasilnya ke `.env` server** dan sesuaikan Public Key di `Dashboard.tsx` pada client.
-
----
-
-## 📑 Versioning
-
-- **Current Version**: `v1.0.0-stable`
-- **Next Roadmap**: Implementasi Dark/Light Mode Toggle.
-
-## 👨‍💻 Crafted by
-
-**REV** — _Crafted with passion to help you manage your financial journey._
-
----
-
-© 2026 Budget Buddy Framework.
+ISC

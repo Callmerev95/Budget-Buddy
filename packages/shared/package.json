@@ -1,0 +1,19 @@
+{
+  "name": "@budget-buddy/shared",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Skema Zod dan tipe bersama antara web dan api.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "3.25.76"
+  }
+}

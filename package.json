@@ -1,36 +1,57 @@
 {
   "name": "budget-buddy",
-  "version": "1.0.0",
-  "description": "**BudgetBuddy** adalah aplikasi manajemen keuangan personal berbasis SaaS yang membantu user mengelola jatah jajan harian secara cerdas.",
-  "main": "index.js",
+  "version": "2.0.0",
+  "private": true,
   "type": "module",
+  "description": "Aplikasi manajemen keuangan personal: jatah harian, tagihan tetap, budget per kategori, dan laporan.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "npm run dev --prefix server",
-    "client": "npm run dev --prefix client",
-    "build:shared": "cd shared && npm install",
-    "build:server": "cd server && npm install && npx prisma generate && npm run build",
-    "build": "npm run build:shared && npm run build:server"
+    "dev": "npm run dev --workspace=@budget-buddy/web",
+    "dev:api": "npm run dev --workspace=@budget-buddy/api",
+    "build": "npm run build --workspace=@budget-buddy/web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "vercel-build": "prisma generate && npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Callmerev95/Budget-Buddy.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/Callmerev95/Budget-Buddy/issues"
   },
   "homepage": "https://github.com/Callmerev95/Budget-Buddy#readme",
-  "dependencies": {
-    "axios": "^1.13.4",
-    "lucide-react": "^0.563.0",
-    "react-router-dom": "^7.13.0"
+  "license": "ISC",
+  "overrides": {
+    "deepmerge-ts": "^8.0.0",
+    "mysql2": "^3.24.3"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
-    "@types/react": "^19.2.10",
-    "@types/react-dom": "^19.2.3"
+    "@eslint/js": "9.39.5",
+    "@types/node": "20.19.9",
+    "dotenv": "17.4.2",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "0.4.26",
+    "globals": "15.15.0",
+    "prettier": "3.6.2",
+    "prisma": "7.10.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "3.2.7"
   }
 }

@@ -1,8 +1,23 @@
 node_modules/
 dist/
-client/node_modules/
-server/node_modules/
+build/
+.vercel/
+.turbo/
+
+# Prisma client hasil generate
+packages/api/generated/
+
+# Environment
 .env
-.next/
+.env.*
+!.env.example
+
+# Log & OS
 *.log
+npm-debug.log*
 .DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
