@@ -76,5 +76,13 @@ export default tseslint.config(
     },
   },
 
+  // Script Node sekali pakai (smoke test, utilitas): console boleh,
+  // karena output-nya memang laporan ke terminal.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: globals.node },
+    rules: { "no-console": "off" },
+  },
+
   prettier,
 );
