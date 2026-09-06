@@ -23,6 +23,9 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  // .env tinggal di root monorepo, bukan apps/web. Hanya variabel
+  // VITE_* yang di-inline ke bundle, jadi aman.
+  envDir: path.resolve(rootDir, "../.."),
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "./src"),
