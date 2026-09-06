@@ -8,42 +8,218 @@ datasource db {
   // URL dikonfigurasi di prisma.config.ts (Prisma 7).
 }
 
-model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  password         String?
-  name             String
-  supabase_id      String?        @unique
-  dailyLimit       Float          @default(0)
-  monthlyIncome    Float          @default(0)
-  savingsTarget    Float          @default(0)
-  isPercentTarget  Boolean        @default(false)
-  pushSubscription String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  logs             DailyLog[]
-  fixedExpenses    FixedExpense[]
+enum AccountType {
+  CASH
+  BANK
+  EWALLET
 }
 
-model DailyLog {
-  id          String   @id @default(uuid())
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum OccurrenceStatus {
+  PENDING
+  PAID
+  SKIPPED
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String
+  supabase_id      String?  @unique
+  timezone         String   @default("Asia/Jakarta")
+  pushSubscription String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Rencana keuangan bulan berjalan. Dipertahankan di User agar kontrak
+  // endpoint /user/me dan /user/financial-plan tidak berubah selama Fase 2.
+  // Riwayat per-periode pindah ke FinancialPlan mulai Fase 3.
+  dailyLimit      Float @default(0)
+  monthlyIncome   Float @default(0)
+  savingsTarget   Float @default(0)
+  isPercentTarget Boolean @default(false)
+
+  accounts       Account[]
+  categories     Category[]
+  transactions   Transaction[]
+  budgets        Budget[]
+  recurringRules RecurringRule[]
+  goals          SavingsGoal[]
+  financialPlans FinancialPlan[]
+}
+
+model Account {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  type           AccountType @default(CASH)
+  initialBalance Int         @default(0)
+  isArchived     Boolean     @default(false)
+  sortOrder      Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  transactions Transaction[]
+  recurringRules RecurringRule[]
+
+  @@index([userId])
+}
+
+model Category {
+  id         String       @id @default(uuid())
+  // null = kategori sistem (seed), terisi = milik pengguna.
+  userId     String?
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  kind       CategoryKind
+  icon       String       @default("shapes")
+  color      String       @default("#6b7280")
+  isArchived Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  transactions Transaction[]
+  budgets      Budget[]
+  recurringRules RecurringRule[]
+
+  @@unique([userId, name])
+  @@index([userId, kind])
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  type        TransactionType @default(EXPENSE)
+  // Rupiah utuh. IDR tidak punya subunit, jadi integer itu eksak —
+  // menggantikan Float yang menyebabkan drift pembulatan.
+  amount      Int
   description String
-  amount      Float
-  category    String
-  date        DateTime @default(now())
+  occurredAt  DateTime        @default(now())
+  // Transfer dicatat sebagai dua baris (keluar + masuk) dengan grup sama.
+  transferGroupId String?
+  // Diisi engine recurring Fase 3 saat transaksi dibuat otomatis.
+  recurringRuleId String?
+  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([userId, categoryId])
+  @@index([accountId])
+  @@index([transferGroupId])
+}
+
+model Budget {
+  id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  periodStart DateTime
+  periodEnd   DateTime
+  // Rupiah utuh, alokasi maksimum periode tersebut.
+  amount      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([userId, date(sort: Desc)])
+  @@index([userId, periodStart])
 }
 
-model FixedExpense {
-  id      String @id @default(uuid())
-  name    String
-  amount  Float
-  dueDate Int
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model RecurringRule {
+  id          String             @id @default(uuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  accountId   String
+  account     Account            @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  categoryId  String
+  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  amount      Int
+  frequency   RecurringFrequency @default(MONTHLY)
+  dayOfMonth  Int
+  // Bila true, tanggal 31 dijepit ke hari terakhir bulan berjalan
+  // (menggantikan bug lama: tagihan tanggal 31 tak pernah jatuh tempo
+  // di Februari).
+  endOfMonthClamp Boolean   @default(true)
+  autoPost        Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  nextRunAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  @@index([userId, dueDate])
+  occurrences  RecurringOccurrence[]
+  transactions Transaction[]
+
+  @@index([userId, isActive])
+}
+
+model RecurringOccurrence {
+  id            String           @id @default(uuid())
+  ruleId        String
+  rule          RecurringRule    @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  // Kunci idempoten: "2026-09" untuk bulanan, "2026-W37" mingguan, dst.
+  // Menggantikan deteksi "sudah dibayar" via substring deskripsi.
+  periodKey     String
+  dueDate       DateTime
+  status        OccurrenceStatus @default(PENDING)
+  transactionId String?          @unique
+  notifiedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([ruleId, periodKey])
+  @@index([dueDate, status])
+}
+
+model SavingsGoal {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  target    Int
+  saved     Int       @default(0)
+  targetDate DateTime?
+  accountId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model FinancialPlan {
+  id                     String   @id @default(uuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Kunci periode: "2026-09". Satu baris per pengguna per bulan.
+  periodKey              String
+  monthlyIncome          Int      @default(0)
+  savingsTarget          Int      @default(0)
+  isPercentTarget        Boolean  @default(false)
+  computedDailyAllowance Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([userId, periodKey])
 }

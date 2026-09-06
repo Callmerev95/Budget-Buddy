@@ -3,39 +3,68 @@ import { BILL_CATEGORY, createFixedExpenseSchema } from "@budget-buddy/shared";
 import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { NotFoundError } from "../lib/errors.js";
+import { ensureDefaultAccount, resolveCategoryId } from "../lib/references.js";
+
+interface RuleRow {
+  id: string;
+  name: string;
+  amount: number;
+  dayOfMonth: number;
+  userId: string;
+}
+
+/**
+ * Bentuk response dipertahankan dari kontrak lama: { id, name, amount,
+ * dueDate, userId }. Di dalam, tagihan adalah RecurringRule dengan
+ * dayOfMonth — engine occurrence menyusul di Fase 3.
+ */
+function toResponse(rule: RuleRow) {
+  return {
+    id: rule.id,
+    name: rule.name,
+    amount: rule.amount,
+    dueDate: rule.dayOfMonth,
+    userId: rule.userId,
+  };
+}
 
 export async function listFixedExpenses(req: Request, res: Response): Promise<void> {
   const userId = getProfileId(req);
 
-  const expenses = await prisma.fixedExpense.findMany({
+  const rules = await prisma.recurringRule.findMany({
     where: { userId },
-    orderBy: { dueDate: "asc" },
+    orderBy: { dayOfMonth: "asc" },
   });
 
-  res.status(200).json({ data: expenses });
+  res.status(200).json({ data: rules.map(toResponse) });
 }
 
 export async function createFixedExpense(req: Request, res: Response): Promise<void> {
   const userId = getProfileId(req);
   const input = createFixedExpenseSchema.parse(req.body);
 
-  const expense = await prisma.fixedExpense.create({
+  const accountId = await ensureDefaultAccount(userId);
+  const categoryId = await resolveCategoryId(userId, BILL_CATEGORY);
+
+  const rule = await prisma.recurringRule.create({
     data: {
       name: input.name,
       amount: input.amount,
-      dueDate: input.dueDate,
+      dayOfMonth: input.dueDate,
+      accountId,
+      categoryId,
       userId,
     },
   });
 
-  res.status(201).json({ message: "Tagihan berhasil disimpan.", data: expense });
+  res.status(201).json({ message: "Tagihan berhasil disimpan.", data: toResponse(rule) });
 }
 
 export async function deleteFixedExpense(req: Request, res: Response): Promise<void> {
   const userId = getProfileId(req);
   const id = req.params.id as string;
 
-  const deleted = await prisma.fixedExpense.deleteMany({ where: { id, userId } });
+  const deleted = await prisma.recurringRule.deleteMany({ where: { id, userId } });
 
   if (deleted.count === 0) {
     throw new NotFoundError("Tagihan tidak ditemukan.");
@@ -45,33 +74,33 @@ export async function deleteFixedExpense(req: Request, res: Response): Promise<v
 }
 
 /**
- * Mencatat pembayaran tagihan sebagai transaksi.
- *
- * Controller lama punya fungsi serupa yang tidak pernah dipasang ke route mana
- * pun, sementara client mengirim POST /transactions dengan deskripsi bebas.
- * Pencatatan lewat endpoint ini menjaga format deskripsi tetap konsisten.
+ * Mencatat pembayaran tagihan sebagai transaksi pada kategori rule tersebut.
+ * Format deskripsi dipertahankan agar deteksi scheduler lama tetap jalan
+ * sampai digantikan RecurringOccurrence di Fase 3.
  */
 export async function payFixedExpense(req: Request, res: Response): Promise<void> {
   const userId = getProfileId(req);
   const id = req.params.id as string;
 
-  const expense = await prisma.fixedExpense.findFirst({ where: { id, userId } });
+  const rule = await prisma.recurringRule.findFirst({ where: { id, userId } });
 
-  if (!expense) {
+  if (!rule) {
     throw new NotFoundError("Tagihan tidak ditemukan.");
   }
 
-  const transaction = await prisma.dailyLog.create({
+  const transaction = await prisma.transaction.create({
     data: {
-      description: `Pembayaran ${expense.name}`,
-      amount: expense.amount,
-      category: BILL_CATEGORY,
+      description: `Pembayaran ${rule.name}`,
+      amount: rule.amount,
+      type: "EXPENSE",
+      categoryId: rule.categoryId,
+      accountId: rule.accountId,
       userId,
     },
   });
 
   res.status(201).json({
-    message: `${expense.name} berhasil dibayar.`,
+    message: `${rule.name} berhasil dibayar.`,
     data: transaction,
   });
 }

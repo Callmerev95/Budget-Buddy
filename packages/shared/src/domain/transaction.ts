@@ -49,6 +49,25 @@ export type FixedExpense = z.infer<typeof FixedExpenseSchema>;
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 export type MonthlySummary = z.infer<typeof MonthlySummarySchema>;
 
+/** Referensi akun dan kategori untuk client baru (Fase 4). */
+export const AccountSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["CASH", "BANK", "EWALLET"]),
+  isArchived: z.boolean(),
+});
+
+export const CategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.enum(["INCOME", "EXPENSE"]),
+  icon: z.string(),
+  color: z.string(),
+});
+
+export type Account = z.infer<typeof AccountSchema>;
+export type Category = z.infer<typeof CategorySchema>;
+
 /** Bentuk minimal transaksi yang dibutuhkan komponen daftar. */
 export interface TransactionListItem {
   id: string;

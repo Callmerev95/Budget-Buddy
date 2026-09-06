@@ -17,6 +17,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
   },
   // `generate` tidak menyentuh database, jadi datasource hanya disertakan bila
   // DIRECT_URL tersedia. Tanpa ini, `env()` dari @prisma/config melempar saat
