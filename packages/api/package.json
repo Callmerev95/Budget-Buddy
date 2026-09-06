@@ -6,7 +6,7 @@
   "description": "Backend Budget Buddy: Express + Prisma, dijalankan sebagai Vercel Function.",
   "exports": {
     ".": {
-      "types": "./dist/app.d.ts",
+      "types": "./src/app.ts",
       "default": "./dist/app.js"
     }
   },
@@ -39,7 +39,7 @@
     "tsup": "8.5.1",
     "tsx": "4.23.13"
   },
-  "types": "./dist/app.d.ts",
+  "types": "./src/app.ts",
   "files": [
     "dist"
   ]
