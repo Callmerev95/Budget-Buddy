@@ -44,8 +44,10 @@ jobs:
       - name: Test
         run: npm test
 
+      # Membangun rantai yang sama persis dengan Vercel (vercel-build),
+      # supaya kegagalan bundling tertangkap di CI duluan, bukan di deploy.
       - name: Build
-        run: npm run build
+        run: npm run vercel-build
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_ANON_KEY: ci-placeholder-key
