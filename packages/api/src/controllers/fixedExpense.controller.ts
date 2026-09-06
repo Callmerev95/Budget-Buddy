@@ -1,11 +1,11 @@
 import type { Request, Response } from "express";
 import { BILL_CATEGORY, createFixedExpenseSchema } from "@budget-buddy/shared";
-import { getAuth } from "../middleware/auth.js";
+import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { NotFoundError } from "../lib/errors.js";
 
 export async function listFixedExpenses(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
 
   const expenses = await prisma.fixedExpense.findMany({
     where: { userId },
@@ -16,7 +16,7 @@ export async function listFixedExpenses(req: Request, res: Response): Promise<vo
 }
 
 export async function createFixedExpense(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const input = createFixedExpenseSchema.parse(req.body);
 
   const expense = await prisma.fixedExpense.create({
@@ -32,7 +32,7 @@ export async function createFixedExpense(req: Request, res: Response): Promise<v
 }
 
 export async function deleteFixedExpense(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const id = req.params.id as string;
 
   const deleted = await prisma.fixedExpense.deleteMany({ where: { id, userId } });
@@ -52,7 +52,7 @@ export async function deleteFixedExpense(req: Request, res: Response): Promise<v
  * Pencatatan lewat endpoint ini menjaga format deskripsi tetap konsisten.
  */
 export async function payFixedExpense(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const id = req.params.id as string;
 
   const expense = await prisma.fixedExpense.findFirst({ where: { id, userId } });

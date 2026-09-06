@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { financialPlanSchema } from "@budget-buddy/shared";
-import { getAuth } from "../middleware/auth.js";
+import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { calculateDailyAllowance } from "../domain/finance.js";
 import { NotFoundError } from "../lib/errors.js";
 
 export async function getMe(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -29,7 +29,7 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateFinancialPlan(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const plan = financialPlanSchema.parse(req.body);
 
   const fixedExpenses = await prisma.fixedExpense.findMany({

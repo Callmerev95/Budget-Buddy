@@ -2,7 +2,8 @@ import compression from "compression";
 import express, { type Express, type Request, type Response } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { corsOrigins, isProduction } from "./config/env.js";
+import { corsOrigins, env, isProduction } from "./config/env.js";
+import { buildCspDirectives } from "./lib/csp.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 import cronRoutes from "./routes/cron.routes.js";
 import fixedExpenseRoutes from "./routes/fixedExpense.routes.js";
@@ -58,7 +59,11 @@ export function buildApp(): Express {
 
   app.use(
     helmet({
-      contentSecurityPolicy: isProduction ? undefined : false,
+      // CSP dimatikan saat development karena Vite HMR memakai inline
+      // script dan WebSocket ke origin dev. Di production CSP ketat aktif.
+      contentSecurityPolicy: isProduction
+        ? { directives: buildCspDirectives({ supabaseUrl: env.SUPABASE_URL }) }
+        : false,
       crossOriginEmbedderPolicy: false,
     }),
   );

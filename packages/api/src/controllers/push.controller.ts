@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Request, Response } from "express";
-import { getAuth } from "../middleware/auth.js";
+import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { env, webPushEnabled } from "../config/env.js";
 
@@ -26,7 +26,7 @@ export function getPushConfig(_req: Request, res: Response): void {
 }
 
 export async function savePushSubscription(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
   const subscription = subscriptionSchema.parse(req.body);
 
   await prisma.user.update({
@@ -38,7 +38,7 @@ export async function savePushSubscription(req: Request, res: Response): Promise
 }
 
 export async function deletePushSubscription(req: Request, res: Response): Promise<void> {
-  const { userId } = getAuth(req);
+  const userId = getProfileId(req);
 
   await prisma.user.update({
     where: { id: userId },
