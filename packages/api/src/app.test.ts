@@ -15,10 +15,16 @@ let app: Express;
 
 beforeAll(async () => {
   process.env.NODE_ENV = "test";
+  // Jangan muat .env asli: test ini mengontrol environment sendiri,
+  // termasuk CRON_SECRET yang dikosongkan untuk jalur 503.
+  process.env.DOTENV_PATH = "none";
   process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
   process.env.SUPABASE_URL ??= "https://test.supabase.co";
   process.env.SUPABASE_ANON_KEY ??= "test-anon-key";
   process.env.APP_URL ??= "http://localhost:5173";
+
+  // Test cron 503 membutuhkan CRON_SECRET kosong.
+  delete process.env.CRON_SECRET;
 
   const { buildApp } = await import("./app.js");
   app = buildApp();

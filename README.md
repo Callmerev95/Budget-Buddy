@@ -40,7 +40,7 @@ cp .env.example .env      # isi kredensial Supabase
 npm run prisma:generate   # wajib sebelum typecheck pertama
 npm run prisma:migrate    # menyiapkan skema database
 
-npm run dev:api           # http://localhost:5000
+npm run dev:api           # http://localhost:5001
 npm run dev               # http://localhost:5173
 ```
 

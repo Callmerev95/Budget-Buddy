@@ -10,12 +10,12 @@
  * password tidak boleh lewat chat, log, atau CI:
  *
  *   TEST_USER_EMAIL=... TEST_USER_PASSWORD=... \
- *   API_BASE_URL=http://localhost:5000 \
+ *   API_BASE_URL=http://localhost:5001 \
  *   SUPABASE_URL=https://xxx.supabase.co \
  *   SUPABASE_ANON_KEY=sb_publishable_... \
  *   node scripts/smoke-auth.mjs
  *
- * API_BASE_URL default http://localhost:5000. Untuk mengetes produksi,
+ * API_BASE_URL default http://localhost:5001. Untuk mengetes produksi,
  * arahkan ke domain Vercel (butuh Deployment Protection bypass di browser
  * tidak berlaku di sini — pakai URL yang tidak diproteksi atau matikan
  * sementara protection untuk preview).
@@ -25,7 +25,7 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const API_BASE_URL = (process.env.API_BASE_URL ?? "http://localhost:5000").replace(
+const API_BASE_URL = (process.env.API_BASE_URL ?? "http://localhost:5001").replace(
   /\/$/,
   "",
 );
