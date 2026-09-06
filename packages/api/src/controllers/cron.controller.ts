@@ -43,22 +43,23 @@ export async function runDailyReminders(req: Request, res: Response): Promise<vo
   const today = Number(dayText);
   const monthStart = startOfMonthUtc(now);
 
-  const expenses = await prisma.fixedExpense.findMany({
+  const expenses = await prisma.recurringRule.findMany({
+    where: { isActive: true },
     take: BATCH_SIZE,
     orderBy: { id: "asc" },
-    select: { id: true, name: true, amount: true, dueDate: true, userId: true },
+    select: { id: true, name: true, amount: true, dayOfMonth: true, userId: true },
   });
 
   let notified = 0;
 
   for (const expense of expenses) {
-    if (effectiveDueDate(expense.dueDate, year, month) !== today) continue;
+    if (effectiveDueDate(expense.dayOfMonth, year, month) !== today) continue;
 
-    const alreadyPaid = await prisma.dailyLog.findFirst({
+    const alreadyPaid = await prisma.transaction.findFirst({
       where: {
         userId: expense.userId,
         description: { contains: expense.name, mode: "insensitive" },
-        date: { gte: monthStart },
+        occurredAt: { gte: monthStart },
       },
       select: { id: true },
     });

@@ -32,12 +32,12 @@ export async function updateFinancialPlan(req: Request, res: Response): Promise<
   const userId = getProfileId(req);
   const plan = financialPlanSchema.parse(req.body);
 
-  const fixedExpenses = await prisma.fixedExpense.findMany({
-    where: { userId },
+  const recurringRules = await prisma.recurringRule.findMany({
+    where: { userId, isActive: true },
     select: { amount: true },
   });
 
-  const totalFixed = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalFixed = recurringRules.reduce((sum, rule) => sum + rule.amount, 0);
 
   const dailyLimit = calculateDailyAllowance({
     monthlyIncome: plan.monthlyIncome,

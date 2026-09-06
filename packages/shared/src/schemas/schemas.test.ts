@@ -80,6 +80,32 @@ describe("createTransactionSchema", () => {
     });
   });
 
+  it("menerima ID akun dan kategori langsung dari client baru", () => {
+    const accountId = "123e4567-e89b-42d3-a456-426614174000";
+    const categoryId = "123e4567-e89b-42d3-a456-426614174001";
+    const result = createTransactionSchema.parse({
+      description: "Makan siang",
+      amount: 35000,
+      category: "Makan & Minum",
+      accountId,
+      categoryId,
+    });
+
+    expect(result.accountId).toBe(accountId);
+    expect(result.categoryId).toBe(categoryId);
+  });
+
+  it("menolak ID yang bukan UUID", () => {
+    const result = createTransactionSchema.safeParse({
+      description: "Makan siang",
+      amount: 35000,
+      category: "Makan & Minum",
+      accountId: "bukan-uuid",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("menolak kategori di luar daftar", () => {
     const result = createTransactionSchema.safeParse({
       description: "Test",

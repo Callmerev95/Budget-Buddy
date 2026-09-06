@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ExpenseCategorySchema } from "../domain/category.js";
 import { AmountSchema } from "../domain/money.js";
 
+const uuidSchema = z.string().uuid("ID tidak valid");
+
 export const createTransactionSchema = z.object({
   description: z
     .string()
@@ -10,6 +12,10 @@ export const createTransactionSchema = z.object({
     .max(120, "Deskripsi terlalu panjang"),
   amount: AmountSchema,
   category: ExpenseCategorySchema,
+  // Opsional selama client lama masih mengirim nama kategori. Client baru
+  // (Fase 4) mengirim ID langsung; server memakai ID bila ada.
+  accountId: uuidSchema.optional(),
+  categoryId: uuidSchema.optional(),
 });
 
 export const transactionIdSchema = z.object({
