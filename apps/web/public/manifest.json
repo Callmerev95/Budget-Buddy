@@ -1,25 +1,30 @@
 {
+  "name": "Budget Buddy — Catatan Keuangan",
   "short_name": "BudgetBuddy",
-  "name": "Budget Buddy: Smart Finance",
+  "description": "Kelola jatah harian, tagihan, budget, dan target tabungan.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0071E3",
+  "background_color": "#F5F5F7",
+  "lang": "id",
   "icons": [
     {
-      "src": "bb.png",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "bb.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     },
     {
-      "src": "bb.png",
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "maskable"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#09090b",
-  "background_color": "#09090b"
+  ]
 }

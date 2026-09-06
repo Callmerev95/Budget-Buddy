@@ -15,6 +15,8 @@ export const TransactionSchema = z.object({
   category: z.string(),
   date: z.string(),
   userId: z.string(),
+  accountId: z.string(),
+  type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]),
 });
 
 export const FixedExpenseSchema = z.object({
@@ -75,6 +77,7 @@ export interface TransactionListItem {
   amount: number;
   category: string;
   date?: string;
+  type?: "INCOME" | "EXPENSE" | "TRANSFER";
 }
 
 export const CategoryTotalSchema = z.object({

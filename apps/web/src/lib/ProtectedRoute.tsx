@@ -35,11 +35,11 @@ export default function ProtectedRoute() {
   if (status === "loading") {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#050505]"
+        className="flex min-h-screen items-center justify-center bg-bg"
         role="status"
         aria-label="Memuat sesi"
       >
-        <Loader2 className="animate-spin text-emerald-500" size={28} aria-hidden="true" />
+        <Loader2 className="animate-spin text-accent" size={28} aria-hidden="true" />
       </div>
     );
   }
