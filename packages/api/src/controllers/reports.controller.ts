@@ -91,8 +91,13 @@ async function summarizeMonth(
   ]);
 
   const totalByType = new Map(totals.map((row) => [row.type, row._sum.amount ?? 0]));
+  // ID berasal dari groupBy yang sudah ter-scope userId; klausa OR di sini
+  // agar lolos tenancy guard sekaligus mencegah pemakaian kategori asing.
   const names = await prisma.category.findMany({
-    where: { id: { in: byCategory.map((row) => row.categoryId) } },
+    where: {
+      id: { in: byCategory.map((row) => row.categoryId) },
+      OR: [{ userId }, { userId: null }],
+    },
     select: { id: true, name: true },
   });
   const nameById = new Map(names.map((c) => [c.id, c.name]));
