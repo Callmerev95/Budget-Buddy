@@ -7,6 +7,7 @@ import { buildCspDirectives } from "./lib/csp.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 import cronRoutes from "./routes/cron.routes.js";
 import fixedExpenseRoutes from "./routes/fixedExpense.routes.js";
+import recurringRoutes from "./routes/recurring.routes.js";
 import pushRoutes from "./routes/push.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -80,6 +81,7 @@ export function buildApp(): Express {
   app.use("/api/user", userRoutes);
   app.use("/api/transactions", transactionRoutes);
   app.use("/api/fixed-expenses", fixedExpenseRoutes);
+  app.use("/api/recurring", recurringRoutes);
   app.use("/api/push", pushRoutes);
   app.use("/api/cron", cronRoutes);
 

@@ -41,3 +41,17 @@ export function validateParams<TSchema extends ZodTypeAny>(schema: TSchema) {
     next();
   };
 }
+
+/** Memvalidasi query string, mis. `?month=2026-09`. */
+export function validateQuery<TSchema extends ZodTypeAny>(schema: TSchema) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      next(new ValidationError(toIssues(result.error)));
+      return;
+    }
+
+    next();
+  };
+}
