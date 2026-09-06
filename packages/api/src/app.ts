@@ -9,6 +9,7 @@ import cronRoutes from "./routes/cron.routes.js";
 import fixedExpenseRoutes from "./routes/fixedExpense.routes.js";
 import recurringRoutes from "./routes/recurring.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
 import pushRoutes from "./routes/push.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
@@ -85,6 +86,7 @@ export function buildApp(): Express {
   app.use("/api/fixed-expenses", fixedExpenseRoutes);
   app.use("/api/recurring", recurringRoutes);
   app.use("/api/catalog", catalogRoutes);
+  app.use("/api/notifications", notificationRoutes);
   app.use("/api/reports", reportsRoutes);
   app.use("/api/push", pushRoutes);
   app.use("/api/cron", cronRoutes);

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { BILL_CATEGORY, createFixedExpenseSchema } from "@budget-buddy/shared";
 import { getProfileId } from "../middleware/ensureProfile.js";
 import { prisma } from "../lib/prisma.js";
+import { recordNotification } from "../lib/notifications.js";
 import { NotFoundError } from "../lib/errors.js";
 import { ensureDefaultAccount, resolveCategoryId } from "../lib/references.js";
 
@@ -98,6 +99,13 @@ export async function payFixedExpense(req: Request, res: Response): Promise<void
       userId,
     },
   });
+
+  void recordNotification(
+    userId,
+    "PAYMENT_RECEIVED",
+    `${rule.name} berhasil dibayar`,
+    `Pembayaran ${rule.name} sebesar Rp ${rule.amount.toLocaleString("id-ID")} tercatat.`,
+  );
 
   res.status(201).json({
     message: `${rule.name} berhasil dibayar.`,

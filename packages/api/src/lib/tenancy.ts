@@ -11,6 +11,7 @@ const SCOPED_MODELS: ReadonlySet<string> = new Set([
   "RecurringRule",
   "SavingsGoal",
   "FinancialPlan",
+  "Notification",
 ]);
 
 function hasOwnKey(value: unknown, key: string): boolean {

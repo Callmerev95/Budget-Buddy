@@ -5,6 +5,7 @@ import {
   createTransferSchema,
   deleteAccountSchema,
   exportQuerySchema,
+  notificationListSchema,
   DueDateSchema,
   NonNegativeAmountSchema,
   createFixedExpenseSchema,
@@ -269,5 +270,22 @@ describe("deleteAccountSchema", () => {
     const result = deleteAccountSchema.parse({ email: "  REV@Example.COM " });
 
     expect(result.email).toBe("rev@example.com");
+  });
+});
+
+describe("notificationListSchema", () => {
+  it("menerima query kosong", () => {
+    const result = notificationListSchema.parse({});
+
+    expect(result.unreadOnly).toBeUndefined();
+  });
+
+  it("mengonversi string true menjadi boolean", () => {
+    expect(notificationListSchema.parse({ unreadOnly: "true" }).unreadOnly).toBe(true);
+    expect(notificationListSchema.parse({ unreadOnly: "false" }).unreadOnly).toBe(false);
+  });
+
+  it("menolak limit di atas 50", () => {
+    expect(notificationListSchema.safeParse({ limit: 100 }).success).toBe(false);
   });
 });
