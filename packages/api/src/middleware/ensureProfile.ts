@@ -36,18 +36,48 @@ export async function ensureProfile(
   });
 
   if (!existing) {
-    const created = await prisma.user.create({
-      data: {
-        supabase_id: userId,
-        email,
-        name: name ?? email.split("@")[0] ?? "Pengguna",
-      },
-      select: { id: true },
-    });
+    const displayName = name ?? email.split("@")[0] ?? "Pengguna";
 
-    req.profileId = created.id;
-    next();
-    return;
+    try {
+      const created = await prisma.user.create({
+        data: { supabase_id: userId, email, name: displayName },
+        select: { id: true },
+      });
+
+      req.profileId = created.id;
+      next();
+      return;
+    } catch (error) {
+      // Email sudah dipakai baris lain: pengguna mendaftar ulang setelah
+      // akun auth-nya dihapus (Supabase tidak meng-cascade penghapusan ke
+      // tabel kita), sehingga profil orphan tertinggal. Adopsi baris itu
+      // alih-alih gagal — manusia yang sama, identitas auth baru.
+      // P2002 = unique constraint violation.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        const orphan = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true },
+        });
+
+        if (orphan) {
+          await prisma.user.update({
+            where: { id: orphan.id },
+            data: { supabase_id: userId, name: displayName },
+          });
+
+          req.profileId = orphan.id;
+          next();
+          return;
+        }
+      }
+
+      throw error;
+    }
   }
 
   const displayName = name ?? existing.name;
