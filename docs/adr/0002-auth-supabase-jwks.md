@@ -31,5 +31,5 @@ dapat dipalsukan adalah risiko reputasi dan data.
   Admin API hanya untuk hapus akun (service role key, opsional).
 - Supabase menjamin keamanan password/login di luar tanggung jawab kita.
 - `ensureProfile` membuat user saat belum ada — race `P2002` saat dua
-  request bersamaan didokumentasikan di audit Fase A (bug B1) dan akan
-  diperbaiki di Fase C.
+  request bersamaan didokumentasikan di audit Fase A (bug B1) dan ditutup
+  di Fase C (re-lookup berurutan + unit test, `ensureProfile.test.ts`).

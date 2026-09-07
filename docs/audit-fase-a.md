@@ -60,15 +60,17 @@ dua bug tambahan di bawah).
 
 ## Temuan Bug & Rekomendasi
 
-### B1. `ensureProfile` race P2002 (P1, belum diperbaiki)
+### B1. `ensureProfile` race P2002 (P1 — FIXED di Fase C)
 - **Gejala**: 5x `prisma:error` di log api — `Unique constraint failed on
   User_email_key` dari `ensureProfile.ts:42` saat burst request pertama
   setelah login (parallel `user.create()`).
 - **Dampak**: request kedua gagal walau middleware punya catch P2002 yang
   mengadopsi orphan; log kotor; berpotensi race di produksi Vercel.
-- **Rekomendasi**: buat profil dengan pattern upsert/transaksi, atau
-  `find` first lalu `create` dalam satu transaction dengan P2002 → refetch.
-  Masuk Fase C (fix) dengan unit test.
+- **Fix (sudah diterapkan, PR 2)**: `resolveProfileId` memakai fast-path
+  read-only (refresh email/nama bila berubah), lalu `create`; bila P2002,
+  re-lookup berurutan by `supabase_id` (race request paralel) baru by
+  `email` (orphan pasca-hapus akun) lalu klaim ulang; non-P2002 dilempar.
+  Ditutup unit test `middleware/ensureProfile.test.ts` (8 kasus).
 
 ### B2. Goals top-up ditolak guard tenancy (P1 — FIXED lokal)
 - **Gejala**: `PATCH /api/catalog/goals/:id/progress` → 500
@@ -90,11 +92,15 @@ dua bug tambahan di bawah).
 - **Pertimbangan**: apakah transfer keluar dihitung "terpakai"? Desain saat
   ini tidak — dokumentasikan di threshold/decision bila berubah.
 
-### B4. Search transaksi tidak reset (P2, belum diperbaiki)
+### B4. Search transaksi tidak reset (P2 — FIXED di Fase C)
 - **Gejala**: mengosongkan "Cari transaksi" tidak memulihkan daftar sampai
   reload. Setelah hapus + clear, UI tampil "0 transaksi" walau DB 1 baris.
-- **Rekomendasi**: reset filter via event/value change yang benar (debounce
-  harus melihat nilai kosong), + invalidate query. Masuk Fase C/D.
+- **Akar lama**: search debounce server-side; nilai kosong terkirim sebagai
+  query penuh dan filter menjaring semuanya.
+- **Fix**: search dialihkan ke filter client-side (`TransactionsPage.items`,
+  no debounce, no param API); `query` kosong → semua item lolos, tombol
+  ✕ native `<input type="search">` memicu `onChange` kosong. Tidak ada lagi
+  state server yang perlu di-invalidate.
 
 ### B5. `window.confirm` native dihapus (P3)
 - Halaman Transaksi, Akun, Target memakai `window.confirm`. Tidak konsisten
@@ -122,8 +128,8 @@ table, stat-card, empty states, sheet/dialog).
 
 ## Langkah Berikut (Fase B → E)
 
-1. Fase B: dokumentasi (architecture, api, ADR, user-guide) → PR 1.
-2. Fase C: fix B1 + B4, alur UX → PR 2.
+1. Fase B: dokumentasi (architecture, api, ADR, user-guide) → PR 1. ✅
+2. Fase C: fix B1 (✅) + B4 (✅), alur UX (👉 selector akun di sheet transaksi) → PR 2.
 3. Fase D: rombak UI mengikuti Fundex (palet `tokens.css`, komponen baru
    StatCard/DataTable/PageHeader/Badge/Tabs/Dialog/Pagination/Avatar/Topbar;
    konfirmasi destructive pakai Dialog; desktop sidebar) → PR 3.

@@ -174,6 +174,8 @@ pilihan akun di sheet — pertimbangan UX untuk Fase C/D.
 2. Search transaksi tidak mereset saat field dikosongkan sampai reload.
 3. Dashboard "Terpakai hari ini" sempat menghitung pemasukan (fix sudah dibuat:
    hanya EXPENSE).
-4. Sheet transaksi tidak menawarkan pilihan akun (selalu akun pertama).
+4. Sheet transaksi tidak menawarkan pilihan akun (selalu akun pertama) → **fixed
+   di Fase C**: selector akun di `AddTransactionSheet` (default "Otomatis"),
+   wrapper `POST /transactions` kini mengirim `accountId`.
 5. `CRON_SECRET` di `.env` lokal memakai literal quotes — dotenv me-strip tapi
    pemanggil manual harus ikut strip.
