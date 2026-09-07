@@ -55,7 +55,9 @@ export function DashboardPage() {
     const pages = transactions.data?.pages ?? [];
     return pages
       .flatMap((p) => p.data)
-      .filter((txn) => toCalendarDay(txn.date) === today)
+      .filter(
+        (txn) => toCalendarDay(txn.date) === today && txn.type === "EXPENSE",
+      )
       .reduce((total, txn) => total + txn.amount, 0);
   }, [transactions.data, today]);
 
