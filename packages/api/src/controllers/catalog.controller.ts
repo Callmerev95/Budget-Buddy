@@ -13,6 +13,7 @@ import { prisma } from "../lib/prisma.js";
 import { NotFoundError } from "../lib/errors.js";
 import { AppError } from "../lib/errors.js";
 import { JAKARTA_TIME_ZONE, toCalendarDay } from "../lib/calendar.js";
+import { signedFlowAmount } from "../domain/finance.js";
 
 /**
  * Endpoint katalog untuk UI baru (Fase 4): akun, kategori, budget, goals,
@@ -30,15 +31,23 @@ export async function listAccounts(req: Request, res: Response): Promise<void> {
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     }),
     prisma.transaction.groupBy({
-      by: ["accountId"],
+      by: ["accountId", "type"],
       where: { userId },
       _sum: { amount: true },
     }),
   ]);
 
-  // Saldo = saldo awal + seluruh mutasi bertanda. Baris transfer keluar
-  // bernilai negatif dan masuk positif, jadi satu penjumlahan cukup.
-  const flowByAccount = new Map(sums.map((row) => [row.accountId, row._sum.amount ?? 0]));
+  // Saldo = saldo awal + mutasi bertanda: pengeluaran dikurangi, pemasukan
+  // ditambah. Baris transfer keluar negatif dan masuk positif, jadi keduanya
+  // diteruskan apa adanya.
+  const flowByAccount = new Map<string, number>();
+  for (const row of sums) {
+    const current = flowByAccount.get(row.accountId) ?? 0;
+    flowByAccount.set(
+      row.accountId,
+      current + signedFlowAmount(row.type, row._sum.amount ?? 0),
+    );
+  }
 
   res.status(200).json({
     data: accounts.map((account) => ({
