@@ -241,10 +241,14 @@ export async function addGoalProgress(req: Request, res: Response): Promise<void
     throw new NotFoundError("Target tidak ditemukan.");
   }
 
-  const updated = await prisma.savingsGoal.update({
-    where: { id: goal.id },
+  const updated = await prisma.savingsGoal.updateMany({
+    where: { id: goal.id, userId },
     data: { saved: { increment: amount } },
   });
+
+  if (updated.count === 0) {
+    throw new NotFoundError("Target tidak ditemukan.");
+  }
 
   res.status(200).json({ message: "Tabungan tercatat.", data: updated });
 }
