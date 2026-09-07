@@ -153,6 +153,11 @@ export function DashboardPage() {
             value={<Money amount={s.monthlyIncome} animate />}
             tone="success"
             icon={<TrendingUp size={16} aria-hidden="true" />}
+            meta={
+              <>
+                Realisasi bulan ini <Money amount={s.incomeThisMonth} />
+              </>
+            }
           />
         </motion.div>
         <motion.div variants={staggerItem}>
