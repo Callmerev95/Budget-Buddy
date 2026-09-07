@@ -1,12 +1,14 @@
 /**
- * Design token Budget Buddy v2 — modern fintech + apple-like.
+ * Design token Budget Buddy v2 — palet Fundex (violet/emerald/red).
  *
  * Warna didefinisikan sebagai triplet RGB agar mendukung opacity modifier
  * Tailwind (bg-surface/50). Jangan pakai hex mentah di komponen — selalu
  * lewat token ini (bg-surface, text-muted, border-border, ...).
  *
- * Netral dulu, warna hanya untuk makna: accent untuk aksi, income/expense/
- * warning untuk semantik uang. Surface tidak pernah berwarna.
+ * `accent` adalah aksen untuk teks/ikon/latar lembut. `accent-fill` adalah
+ * isian tombol/surface solid — dipisah karena kontras keduanya berbeda:
+ * teks aksen harus terang di dark (violet-400), sedangkan tombol tetap
+ * memakai isian gelap agar teks putih memenuhi WCAG AA.
  */
 :root {
   --bg: 245 245 247;
@@ -15,10 +17,14 @@
   --text: 29 29 31;
   --muted: 110 110 115;
   --border: 229 229 234;
-  --accent: 0 113 227;
+
+  --accent: 124 58 237;
+  --accent-fill: 124 58 237;
   --on-accent: 255 255 255;
-  --income: 36 138 61;
-  --expense: 215 0 21;
+  --on-accent-fill: 255 255 255;
+
+  --income: 4 120 87;
+  --expense: 220 38 38;
   --warning: 178 80 0;
 
   --radius-control: 10px;
@@ -39,9 +45,13 @@
   --text: 245 245 247;
   --muted: 152 152 157;
   --border: 56 56 58;
-  --accent: 10 132 255;
+
+  --accent: 167 139 250;
+  --accent-fill: 124 58 237;
   --on-accent: 255 255 255;
-  --income: 48 209 88;
+  --on-accent-fill: 255 255 255;
+
+  --income: 52 211 153;
   --expense: 255 69 58;
   --warning: 255 159 10;
 
