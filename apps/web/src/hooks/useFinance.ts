@@ -71,6 +71,7 @@ export function useAddTransaction() {
       amount: number;
       category: string;
       type?: "INCOME" | "EXPENSE";
+      accountId?: string;
     }) => (await api.post("/transactions", input)).data,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: queryKeys.transactions });
