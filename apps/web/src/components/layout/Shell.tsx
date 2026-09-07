@@ -5,15 +5,12 @@ import {
   Bell,
   Home,
   LogOut,
-  Menu,
   PieChart,
   Plus,
   Settings,
   Target,
   Wallet,
-  X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useProfile } from "../../hooks/useFinance";
 import { useUnreadCount } from "../../hooks/useNotifications";
@@ -22,6 +19,7 @@ import { pageTransition, spring } from "../../lib/motion";
 import { Avatar } from "../ui/Avatar";
 import { Topbar } from "../ui/Topbar";
 import { PopBadge } from "../ui/PopBadge";
+import { ProfileMenu } from "../ui/ProfileMenu";
 
 const NAV = [
   { to: "/dashboard", label: "Beranda", icon: Home },
@@ -70,11 +68,11 @@ function UnreadBadge({ count }: { count: number }) {
   );
 }
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems() {
   return (
     <>
       {NAV.map(({ to, label, icon: Icon }) => (
-        <NavLink key={to} to={to} onClick={onNavigate} className={navClass}>
+        <NavLink key={to} to={to} className={navClass}>
           {({ isActive }) => (
             <>
               {isActive && <NavIndicator layoutId="sidebar-active" />}
@@ -112,7 +110,7 @@ function LogoutButton() {
   );
 }
 
-function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarBody() {
   const navigate = useNavigate();
   const profile = useProfile();
 
@@ -130,13 +128,13 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </button>
 
       <nav aria-label="Navigasi utama" className="flex flex-col gap-1">
-        <NavItems onNavigate={onNavigate} />
+        <NavItems />
       </nav>
 
       <div className="mt-2 border-t border-border pt-2">
         <nav aria-label="Navigasi tambahan" className="flex flex-col gap-1">
           {SECONDARY_NAV.map(({ to, label }) => (
-            <NavLink key={to} to={to} onClick={onNavigate} className={navClass}>
+            <NavLink key={to} to={to} className={navClass}>
               {({ isActive }) => (
                 <>
                   {isActive && <NavIndicator layoutId="sidebar-active" />}
@@ -145,7 +143,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
               )}
             </NavLink>
           ))}
-          <NotificationNavItem onNavigate={onNavigate} />
+          <NotificationNavItem />
         </nav>
       </div>
 
@@ -175,12 +173,11 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function NotificationNavItem({ onNavigate }: { onNavigate?: () => void }) {
+function NotificationNavItem() {
   const { unreadCount } = useUnreadCount();
   return (
     <NavLink
       to="/notifications"
-      onClick={onNavigate}
       aria-label={
         unreadCount > 0 ? `Notifikasi, ${unreadCount} belum dibaca` : "Notifikasi"
       }
@@ -243,20 +240,9 @@ function AnimatedOutlet() {
 
 /**
  * Shell responsif gaya Fundex: sidebar kiri tetap + topbar di ≥1024px,
- * off-canvas drawer + bottom nav di bawahnya. FAB tetap melayang.
+ * avatar dropdown + bottom nav di bawahnya di mobile. FAB tetap melayang.
  */
 export function Shell({ onAdd }: { onAdd: () => void }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [menuOpen]);
-
   return (
     <div className="min-h-dvh bg-bg text-text">
       {/* Sidebar desktop */}
@@ -280,51 +266,9 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
           </span>
           <div className="flex items-center gap-1">
             <MobileBellButton />
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
-              className="rounded-control p-2 text-muted hover:bg-surface-2 hover:text-text"
-            >
-              {menuOpen ? (
-                <X size={20} aria-hidden="true" />
-              ) : (
-                <Menu size={20} aria-hidden="true" />
-              )}
-            </button>
+            <ProfileMenu />
           </div>
         </header>
-
-        {/* Drawer mobile off-canvas */}
-        {menuOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu navigasi"
-            className="fixed inset-0 z-40 lg:hidden"
-          >
-            <button
-              type="button"
-              onClick={() => setMenuOpen(false)}
-              aria-label="Tutup menu"
-              className="absolute inset-0 h-full w-full bg-black/40 backdrop-blur-sm"
-            />
-            <div className="absolute inset-y-0 left-0 w-72 overflow-y-auto bg-surface p-4 shadow-pop">
-              <div className="flex justify-end pb-2">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(false)}
-                  aria-label="Tutup menu"
-                  className="rounded-control p-2 text-muted hover:bg-surface-2"
-                >
-                  <X size={20} aria-hidden="true" />
-                </button>
-              </div>
-              <SidebarBody onNavigate={() => setMenuOpen(false)} />
-            </div>
-          </div>
-        )}
 
         {/* Konten */}
         <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-6 lg:px-8 lg:pb-20">
@@ -342,27 +286,14 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
             <NavLink
               key={to}
               to={to}
-              onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `relative flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                `flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
                   isActive ? "text-accent" : "text-muted"
                 }`
               }
             >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <NavIndicator
-                      layoutId="bottom-active"
-                      className="inset-x-1.5 inset-y-1 rounded-full bg-accent/10"
-                    />
-                  )}
-                  <span className="relative flex flex-col items-center gap-1">
-                    <Icon size={20} aria-hidden="true" />
-                    {label}
-                  </span>
-                </>
-              )}
+              <Icon size={20} aria-hidden="true" />
+              {label}
             </NavLink>
           ))}
         </div>
