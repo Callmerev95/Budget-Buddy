@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Landmark, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useAccounts, useAddAccount, useDeleteAccount } from "../hooks/useCatalog";
@@ -11,6 +12,7 @@ import { Dialog } from "../components/ui/Dialog";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
+import { staggerContainer, staggerItem } from "../lib/motion";
 import { toErrorMessage } from "../lib/api";
 import { toCalendarDay } from "../lib/format";
 
@@ -190,38 +192,45 @@ export function AccountsPage() {
             description="Buat akun pertamamu untuk mulai mencatat."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-3 sm:grid-cols-2"
+          >
             {accounts.data.map((acc) => (
-              <Card key={acc.id} className="flex items-center gap-3 p-4">
-                <span
-                  className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
-                  aria-hidden="true"
-                >
-                  {acc.type === "CASH" ? <Wallet size={18} /> : <Landmark size={18} />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold">{acc.name}</p>
-                  <p className="text-[13px] text-muted">
-                    {acc.type === "CASH"
-                      ? "Tunai"
-                      : acc.type === "BANK"
-                        ? "Bank"
-                        : "E-wallet"}{" "}
-                    · <span aria-hidden="true">saldo</span>{" "}
-                    <Money amount={acc.balance} className="tnum" />
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDeleteAccountTarget({ id: acc.id, name: acc.name })}
-                  aria-label={`Hapus akun ${acc.name}`}
-                  className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
-                >
-                  <Trash2 size={16} aria-hidden="true" />
-                </button>
-              </Card>
+              <motion.div key={acc.id} variants={staggerItem}>
+                <Card className="flex items-center gap-3 p-4">
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
+                    aria-hidden="true"
+                  >
+                    {acc.type === "CASH" ? <Wallet size={18} /> : <Landmark size={18} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold">{acc.name}</p>
+                    <p className="text-[13px] text-muted">
+                      {acc.type === "CASH"
+                        ? "Tunai"
+                        : acc.type === "BANK"
+                          ? "Bank"
+                          : "E-wallet"}{" "}
+                      · <span aria-hidden="true">saldo</span>{" "}
+                      <Money amount={acc.balance} className="tnum" />
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteAccountTarget({ id: acc.id, name: acc.name })}
+                    aria-label={`Hapus akun ${acc.name}`}
+                    className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </section>
 

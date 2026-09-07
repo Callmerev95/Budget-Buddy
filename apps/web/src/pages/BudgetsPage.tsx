@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { PieChart, Trash2, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,6 +19,7 @@ import { CategoryIcon } from "../components/ui/CategoryIcon";
 import { Sheet } from "../components/ui/Sheet";
 import { Button } from "../components/ui/Button";
 import { AmountInput } from "../components/ui/AmountInput";
+import { staggerContainer, staggerItem } from "../lib/motion";
 import { toErrorMessage } from "../lib/api";
 import { toCalendarDay } from "../lib/format";
 
@@ -104,32 +106,45 @@ export function BudgetsPage() {
       />
 
       {!isLoading && !isError && data && data.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Total budget"
-            value={<Money amount={stats.total} />}
-            icon={<Wallet size={16} aria-hidden="true" />}
-          />
-          <StatCard
-            label="Terpakai"
-            value={<Money amount={stats.spent} />}
-            tone="danger"
-            icon={<TrendingDown size={16} aria-hidden="true" />}
-          />
-          <StatCard
-            label="Sisa"
-            value={<Money amount={stats.remaining} />}
-            tone={stats.remaining >= 0 ? "success" : "danger"}
-            icon={<PieChart size={16} aria-hidden="true" />}
-          />
-          <StatCard
-            label="Dipakai"
-            value={`${Math.round(stats.pct)}%`}
-            meta={stats.pct >= 100 ? "Melebihi batas" : "dari total budget"}
-            tone="warning"
-            icon={<PieChart size={16} aria-hidden="true" />}
-          />
-        </div>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Total budget"
+              value={<Money amount={stats.total} animate />}
+              icon={<Wallet size={16} aria-hidden="true" />}
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Terpakai"
+              value={<Money amount={stats.spent} animate />}
+              tone="danger"
+              icon={<TrendingDown size={16} aria-hidden="true" />}
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Sisa"
+              value={<Money amount={stats.remaining} animate />}
+              tone={stats.remaining >= 0 ? "success" : "danger"}
+              icon={<PieChart size={16} aria-hidden="true" />}
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Dipakai"
+              value={`${Math.round(stats.pct)}%`}
+              meta={stats.pct >= 100 ? "Melebihi batas" : "dari total budget"}
+              tone="warning"
+              icon={<PieChart size={16} aria-hidden="true" />}
+            />
+          </motion.div>
+        </motion.div>
       )}
 
       <section className="space-y-3">
@@ -159,13 +174,19 @@ export function BudgetsPage() {
             }
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-3 sm:grid-cols-2"
+          >
             {data.map((b) => {
               const pct = b.amount > 0 ? (b.spent / b.amount) * 100 : 0;
               const remaining = b.amount - b.spent;
               return (
-                <div
+                <motion.div
                   key={b.id}
+                  variants={staggerItem}
                   className="space-y-4 rounded-card border border-border bg-surface p-5 shadow-card"
                 >
                   <div className="flex items-center gap-3">
@@ -203,10 +224,10 @@ export function BudgetsPage() {
                       </>
                     )}
                   </p>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </section>
 

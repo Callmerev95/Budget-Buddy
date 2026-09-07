@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BellRing,
@@ -25,6 +26,7 @@ import { StatCard } from "../components/ui/StatCard";
 import { Money } from "../components/ui/Money";
 import { Progress } from "../components/ui/Progress";
 import { CategoryIcon } from "../components/ui/CategoryIcon";
+import { fadeUp, staggerContainer, staggerItem } from "../lib/motion";
 import { toCalendarDay, formatCompactCurrency } from "../lib/format";
 import { useBudgets, useCategories, useTrend } from "../hooks/useCatalog";
 
@@ -139,67 +141,86 @@ export function DashboardPage() {
       </header>
 
       {/* Statistik bulan ini */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard
-          label="Pemasukan bulan ini"
-          value={<Money amount={s.monthlyIncome} />}
-          tone="success"
-          icon={<TrendingUp size={16} aria-hidden="true" />}
-        />
-        <StatCard
-          label="Terpakai bulan ini"
-          value={<Money amount={s.spentThisMonth} />}
-          tone="danger"
-          icon={<TrendingDown size={16} aria-hidden="true" />}
-        />
-        <StatCard
-          label="Sisa budget"
-          value={<Money amount={s.monthlyBudgetFree} />}
-          tone={s.monthlyBudgetFree >= 0 ? "neutral" : "danger"}
-          icon={<Wallet size={16} aria-hidden="true" />}
-          meta={s.monthlyBudgetFree < 0 ? "Sudah melewati batas" : "untuk sisa bulan ini"}
-        />
-      </div>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-3 sm:grid-cols-3"
+      >
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Pemasukan bulan ini"
+            value={<Money amount={s.monthlyIncome} animate />}
+            tone="success"
+            icon={<TrendingUp size={16} aria-hidden="true" />}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Terpakai bulan ini"
+            value={<Money amount={s.spentThisMonth} animate />}
+            tone="danger"
+            icon={<TrendingDown size={16} aria-hidden="true" />}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Sisa budget"
+            value={<Money amount={s.monthlyBudgetFree} animate />}
+            tone={s.monthlyBudgetFree >= 0 ? "neutral" : "danger"}
+            icon={<Wallet size={16} aria-hidden="true" />}
+            meta={
+              s.monthlyBudgetFree < 0 ? "Sudah melewati batas" : "untuk sisa bulan ini"
+            }
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Hero jatah harian */}
-      <Card className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[13px] font-medium text-muted">Jatah harian</p>
-            <p className="tnum mt-1 text-4xl font-semibold tracking-tight">
-              <Money amount={s.dailyLimit} />
-            </p>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible">
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[13px] font-medium text-muted">Jatah harian</p>
+              <p className="tnum mt-1 text-4xl font-semibold tracking-tight">
+                <Money amount={s.dailyLimit} animate />
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Sisa budget bulan ini{" "}
+                <Money
+                  amount={s.monthlyBudgetFree}
+                  className="font-semibold text-text"
+                  animate
+                />
+              </p>
+            </div>
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-card bg-accent/10 text-accent"
+              aria-hidden="true"
+            >
+              <Wallet size={20} />
+            </span>
+          </div>
+          <div className="mt-4">
+            <Progress
+              value={percentage}
+              label={`Terpakai ${Math.round(Math.min(100, Math.max(0, percentage)))} persen dari jatah harian`}
+              tone={toneFor(percentage)}
+            />
             <p className="mt-2 text-sm text-muted">
-              Sisa budget bulan ini{" "}
-              <Money amount={s.monthlyBudgetFree} className="font-semibold text-text" />
+              Terpakai hari ini{" "}
+              <Money amount={spentToday} className="font-semibold text-text" />
+              {" · "}Sisa <Money amount={remaining} className="font-semibold text-text" />
             </p>
           </div>
-          <span
-            className="flex h-11 w-11 items-center justify-center rounded-card bg-accent/10 text-accent"
-            aria-hidden="true"
+          <Link
+            to="/settings"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
           >
-            <Wallet size={20} />
-          </span>
-        </div>
-        <div className="mt-4">
-          <Progress
-            value={percentage}
-            label={`Terpakai ${Math.round(Math.min(100, Math.max(0, percentage)))} persen dari jatah harian`}
-            tone={toneFor(percentage)}
-          />
-          <p className="mt-2 text-sm text-muted">
-            Terpakai hari ini{" "}
-            <Money amount={spentToday} className="font-semibold text-text" />
-            {" · "}Sisa <Money amount={remaining} className="font-semibold text-text" />
-          </p>
-        </div>
-        <Link
-          to="/settings"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
-        >
-          Atur rencana keuangan <ArrowRight size={14} aria-hidden="true" />
-        </Link>
-      </Card>
+            Atur rencana keuangan <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        </Card>
+      </motion.div>
 
       {/* Arus kas */}
       <section>
@@ -347,26 +368,39 @@ export function DashboardPage() {
             description="Catat pengeluaran pertamamu dengan tombol +."
           />
         ) : (
-          <Card className="divide-y divide-border">
-            {recent.map((txn) => {
-              const meta = categoryByName.get(txn.category);
-              return (
-                <div key={txn.id} className="flex items-center gap-3 p-4">
-                  <CategoryIcon
-                    icon={meta?.icon ?? "shapes"}
-                    color={meta?.color ?? "#6b7280"}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium">{txn.description}</p>
-                    <p className="text-[13px] text-muted">{txn.category}</p>
-                  </div>
-                  <Money
-                    amount={txn.amount}
-                    className="text-[15px] font-semibold text-expense"
-                  />
-                </div>
-              );
-            })}
+          <Card className="overflow-hidden">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="divide-y divide-border"
+            >
+              {recent.map((txn) => {
+                const meta = categoryByName.get(txn.category);
+                return (
+                  <motion.div
+                    key={txn.id}
+                    variants={staggerItem}
+                    className="flex items-center gap-3 p-4"
+                  >
+                    <CategoryIcon
+                      icon={meta?.icon ?? "shapes"}
+                      color={meta?.color ?? "#6b7280"}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-medium">
+                        {txn.description}
+                      </p>
+                      <p className="text-[13px] text-muted">{txn.category}</p>
+                    </div>
+                    <Money
+                      amount={txn.amount}
+                      className="text-[15px] font-semibold text-expense"
+                    />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </Card>
         )}
       </section>
