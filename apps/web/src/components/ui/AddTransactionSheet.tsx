@@ -12,7 +12,7 @@ import {
   INCOME_CATEGORIES,
 } from "@budget-buddy/shared";
 import { useAddTransaction } from "../../hooks/useFinance";
-import { useCategories } from "../../hooks/useCatalog";
+import { useAccounts, useCategories } from "../../hooks/useCatalog";
 
 export function AddTransactionSheet({
   open,
@@ -23,10 +23,12 @@ export function AddTransactionSheet({
 }) {
   const add = useAddTransaction();
   const { data: categories } = useCategories();
+  const { data: accounts } = useAccounts();
   const [isIncome, setIsIncome] = useState(false);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState(0);
   const [category, setCategory] = useState<string>(DEFAULT_EXPENSE_CATEGORY);
+  const [accountId, setAccountId] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>();
 
   const kind = isIncome ? "INCOME" : "EXPENSE";
@@ -57,10 +59,12 @@ export function AddTransactionSheet({
         amount,
         category,
         type: kind,
+        ...(accountId ? { accountId } : {}),
       });
       toast.success(isIncome ? "Pemasukan tersimpan." : "Pengeluaran tersimpan.");
       setDescription("");
       setAmount(0);
+      setAccountId(undefined);
       onClose();
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menyimpan transaksi."));
@@ -72,7 +76,9 @@ export function AddTransactionSheet({
       open={open}
       onClose={onClose}
       title={isIncome ? "Catat pemasukan" : "Catat pengeluaran"}
-      description="Tersimpan ke akun pertama bila akun tidak dipilih."
+      description={
+        accountId ? undefined : "Tersimpan ke akun pertama bila akun tidak dipilih."
+      }
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="flex gap-2" role="group" aria-label="Jenis transaksi">
@@ -121,6 +127,31 @@ export function AddTransactionSheet({
             {available.map((name) => (
               <option key={name} value={name}>
                 {name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label
+            htmlFor="txn-account"
+            className="ml-1 block text-[13px] font-semibold text-muted"
+          >
+            Akun
+          </label>
+          <select
+            id="txn-account"
+            value={accountId ?? ""}
+            onChange={(e) =>
+              setAccountId(e.target.value === "" ? undefined : e.target.value)
+            }
+            className="w-full rounded-control border border-border bg-surface px-4 py-3 text-[15px] text-text focus:border-accent focus:outline-none"
+          >
+            <option value="">
+              {accounts && accounts.length > 1 ? "Otomatis (akun pertama)" : "Otomatis"}
+            </option>
+            {(accounts ?? []).map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name}
               </option>
             ))}
           </select>
