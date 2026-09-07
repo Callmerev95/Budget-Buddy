@@ -7,6 +7,8 @@ import {
   useMarkNotificationRead,
   useNotifications,
 } from "../hooks/useNotifications";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Tabs } from "../components/ui/Tabs";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Button } from "../components/ui/Button";
 import { toErrorMessage } from "../lib/api";
@@ -91,47 +93,34 @@ export function NotificationsPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Notifikasi</h1>
-          <p className="text-sm text-muted">
-            {unreadCount > 0 ? `${unreadCount} belum dibaca.` : "Semua sudah dibaca."}
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={markAllApi.isPending}
-            onClick={() => void markAllRead()}
-          >
-            <CheckCheck size={15} aria-hidden="true" /> Tandai semua
-          </Button>
-        )}
-      </header>
+      <PageHeader
+        title="Notifikasi"
+        subtitle={
+          unreadCount > 0 ? `${unreadCount} belum dibaca.` : "Semua sudah dibaca."
+        }
+        actions={
+          unreadCount > 0 ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={markAllApi.isPending}
+              onClick={() => void markAllRead()}
+            >
+              <CheckCheck size={15} aria-hidden="true" /> Tandai semua
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <div role="group" aria-label="Filter notifikasi" className="flex gap-2">
-        {(
-          [
-            { value: false, label: "Semua" },
-            { value: true, label: "Belum dibaca" },
-          ] as const
-        ).map((option) => (
-          <button
-            key={String(option.value)}
-            type="button"
-            aria-pressed={unreadOnly === option.value}
-            onClick={() => setUnreadOnly(option.value)}
-            className={`rounded-control px-3 py-2 text-sm font-medium transition-colors ${
-              unreadOnly === option.value
-                ? "bg-accent/10 text-accent"
-                : "text-muted hover:bg-surface-2"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label="Filter notifikasi"
+        value={unreadOnly ? "unread" : "all"}
+        onChange={(v) => setUnreadOnly(v === "unread")}
+        options={[
+          { value: "all", label: "Semua" },
+          { value: "unread", label: "Belum dibaca" },
+        ]}
+      />
 
       <section>
         <SectionHeader title={unreadOnly ? "Belum dibaca" : "Terbaru"} />

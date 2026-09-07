@@ -7,6 +7,7 @@ import { useAddRule, useDeleteRule, useRules, useTransfer } from "../hooks/useFi
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Money } from "../components/ui/Money";
 import { Sheet } from "../components/ui/Sheet";
+import { Dialog } from "../components/ui/Dialog";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
@@ -43,6 +44,14 @@ export function AccountsPage() {
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
   const [transferAmount, setTransferAmount] = useState(0);
+  const [deleteAccountTarget, setDeleteAccountTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [deleteRuleTarget, setDeleteRuleTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const pending = (occurrences.data ?? []).filter((o) => o.status === "PENDING");
 
@@ -96,13 +105,15 @@ export function AccountsPage() {
     }
   };
 
-  const removeAccount = async (id: string, accountName: string) => {
-    if (!window.confirm(`Hapus akun "${accountName}"?`)) return;
+  const confirmRemoveAccount = async () => {
+    if (!deleteAccountTarget) return;
     try {
-      await deleteAccount.mutateAsync(id);
+      await deleteAccount.mutateAsync(deleteAccountTarget.id);
       toast.success("Akun dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus akun."));
+    } finally {
+      setDeleteAccountTarget(null);
     }
   };
 
@@ -137,13 +148,15 @@ export function AccountsPage() {
     }
   };
 
-  const removeRule = async (id: string, ruleName: string) => {
-    if (!window.confirm(`Hapus tagihan "${ruleName}"?`)) return;
+  const confirmRemoveRule = async () => {
+    if (!deleteRuleTarget) return;
     try {
-      await deleteRule.mutateAsync(id);
+      await deleteRule.mutateAsync(deleteRuleTarget.id);
       toast.success("Tagihan dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus tagihan."));
+    } finally {
+      setDeleteRuleTarget(null);
     }
   };
 
@@ -193,12 +206,14 @@ export function AccountsPage() {
                       ? "Tunai"
                       : acc.type === "BANK"
                         ? "Bank"
-                        : "E-wallet"}
+                        : "E-wallet"}{" "}
+                    · <span aria-hidden="true">saldo</span>{" "}
+                    <Money amount={acc.balance} className="tnum" />
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => void removeAccount(acc.id, acc.name)}
+                  onClick={() => setDeleteAccountTarget({ id: acc.id, name: acc.name })}
                   aria-label={`Hapus akun ${acc.name}`}
                   className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
                 >
@@ -276,7 +291,7 @@ export function AccountsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => void removeRule(rule.id, rule.name)}
+                  onClick={() => setDeleteRuleTarget({ id: rule.id, name: rule.name })}
                   aria-label={`Hapus tagihan ${rule.name}`}
                   className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
                 >
@@ -416,6 +431,48 @@ export function AccountsPage() {
           </Button>
         </form>
       </Sheet>
+
+      <Dialog
+        open={deleteAccountTarget !== null}
+        onClose={() => setDeleteAccountTarget(null)}
+        title={`Hapus akun "${deleteAccountTarget?.name ?? ""}"?`}
+        description="Saldo dan riwayat akun ini akan dihapus. Transaksi di akun lain tetap utuh."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setDeleteAccountTarget(null)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={deleteAccount.isPending}
+            onClick={() => void confirmRemoveAccount()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={deleteRuleTarget !== null}
+        onClose={() => setDeleteRuleTarget(null)}
+        title={`Hapus tagihan "${deleteRuleTarget?.name ?? ""}"?`}
+        description="Aturan tagihan rutin ini akan dihapus. Tagihan bulan ini ikut hilang."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setDeleteRuleTarget(null)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={deleteRule.isPending}
+            onClick={() => void confirmRemoveRule()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

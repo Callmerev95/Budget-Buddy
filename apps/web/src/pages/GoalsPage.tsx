@@ -11,6 +11,7 @@ import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Prim
 import { Money } from "../components/ui/Money";
 import { Progress } from "../components/ui/Progress";
 import { Sheet } from "../components/ui/Sheet";
+import { Dialog } from "../components/ui/Dialog";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
@@ -28,6 +29,8 @@ export function GoalsPage() {
   const [target, setTarget] = useState(0);
   const [topupId, setTopupId] = useState<string | null>(null);
   const [topupAmount, setTopupAmount] = useState(0);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,13 +69,16 @@ export function GoalsPage() {
     }
   };
 
-  const remove = async (id: string, goalName: string) => {
-    if (!window.confirm(`Hapus target "${goalName}"?`)) return;
+  const confirmRemove = async () => {
+    if (!deleteId) return;
     try {
-      await removeGoal.mutateAsync(id);
+      await removeGoal.mutateAsync(deleteId);
       toast.success("Target dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus."));
+    } finally {
+      setDeleteId(null);
+      setDeleteName("");
     }
   };
 
@@ -137,7 +143,10 @@ export function GoalsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => void remove(goal.id, goal.name)}
+                      onClick={() => {
+                        setDeleteId(goal.id);
+                        setDeleteName(goal.name);
+                      }}
                       aria-label={`Hapus target ${goal.name}`}
                       className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
                     >
@@ -193,6 +202,36 @@ export function GoalsPage() {
           </Button>
         </form>
       </Sheet>
+
+      <Dialog
+        open={deleteId !== null}
+        onClose={() => {
+          setDeleteId(null);
+          setDeleteName("");
+        }}
+        title={`Hapus target "${deleteName}"?`}
+        description="Data kemajuan target ini akan hilang permanen."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setDeleteId(null);
+              setDeleteName("");
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={removeGoal.isPending}
+            onClick={() => void confirmRemove()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
 
       <Sheet open={topupId !== null} onClose={() => setTopupId(null)} title="Nabung">
         <form onSubmit={(e) => void topup(e)} className="space-y-4">
