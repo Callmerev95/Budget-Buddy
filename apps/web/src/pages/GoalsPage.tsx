@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Target, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -11,9 +12,11 @@ import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Prim
 import { Money } from "../components/ui/Money";
 import { Progress } from "../components/ui/Progress";
 import { Sheet } from "../components/ui/Sheet";
+import { Dialog } from "../components/ui/Dialog";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
+import { staggerContainer, staggerItem } from "../lib/motion";
 import { toErrorMessage } from "../lib/api";
 import { formatShortDate } from "../lib/format";
 
@@ -28,6 +31,8 @@ export function GoalsPage() {
   const [target, setTarget] = useState(0);
   const [topupId, setTopupId] = useState<string | null>(null);
   const [topupAmount, setTopupAmount] = useState(0);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,13 +71,16 @@ export function GoalsPage() {
     }
   };
 
-  const remove = async (id: string, goalName: string) => {
-    if (!window.confirm(`Hapus target "${goalName}"?`)) return;
+  const confirmRemove = async () => {
+    if (!deleteId) return;
     try {
-      await removeGoal.mutateAsync(id);
+      await removeGoal.mutateAsync(deleteId);
       toast.success("Target dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus."));
+    } finally {
+      setDeleteId(null);
+      setDeleteName("");
     }
   };
 
@@ -106,7 +114,12 @@ export function GoalsPage() {
             }
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-3 sm:grid-cols-2"
+          >
             {goals.data.map((goal) => {
               const pct = goal.target > 0 ? (goal.saved / goal.target) * 100 : 0;
               const done = goal.saved >= goal.target;
@@ -121,60 +134,66 @@ export function GoalsPage() {
                   ? new Date(Date.now() + (remaining / rate) * 86_400_000)
                   : null;
               return (
-                <Card key={goal.id} className="space-y-3 p-4">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
-                      aria-hidden="true"
-                    >
-                      <Target size={18} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-semibold">{goal.name}</p>
-                      <p className="text-[13px] text-muted">
-                        <Money amount={goal.saved} /> dari <Money amount={goal.target} />
-                      </p>
+                <motion.div key={goal.id} variants={staggerItem}>
+                  <Card className="space-y-3 p-4">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
+                        aria-hidden="true"
+                      >
+                        <Target size={18} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-semibold">{goal.name}</p>
+                        <p className="text-[13px] text-muted">
+                          <Money amount={goal.saved} /> dari{" "}
+                          <Money amount={goal.target} />
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteId(goal.id);
+                          setDeleteName(goal.name);
+                        }}
+                        aria-label={`Hapus target ${goal.name}`}
+                        className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void remove(goal.id, goal.name)}
-                      aria-label={`Hapus target ${goal.name}`}
-                      className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
-                    >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <Progress
-                    value={pct}
-                    label={`${goal.name}: ${Math.round(Math.min(100, Math.max(0, pct)))} persen terkumpul`}
-                    tone={done ? "success" : "default"}
-                  />
-                  {!done && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setTopupId(goal.id)}
-                    >
-                      + Nabung
-                    </Button>
-                  )}
-                  {done ? (
-                    <p className="text-sm font-medium text-income">Tercapai.</p>
-                  ) : (
-                    <p className="text-[13px] text-muted">
-                      Kurang <Money amount={remaining} />
-                      {goal.targetDate
-                        ? ` · target ${formatShortDate(goal.targetDate)}`
-                        : eta
-                          ? ` · perkiraan tercapai ${formatShortDate(eta)} bila konsisten`
-                          : null}
-                    </p>
-                  )}
-                </Card>
+                    <Progress
+                      value={pct}
+                      label={`${goal.name}: ${Math.round(Math.min(100, Math.max(0, pct)))} persen terkumpul`}
+                      tone={done ? "success" : "default"}
+                    />
+                    {!done && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setTopupId(goal.id)}
+                      >
+                        + Nabung
+                      </Button>
+                    )}
+                    {done ? (
+                      <p className="text-sm font-medium text-income">Tercapai.</p>
+                    ) : (
+                      <p className="text-[13px] text-muted">
+                        Kurang <Money amount={remaining} />
+                        {goal.targetDate
+                          ? ` · target ${formatShortDate(goal.targetDate)}`
+                          : eta
+                            ? ` · perkiraan tercapai ${formatShortDate(eta)} bila konsisten`
+                            : null}
+                      </p>
+                    )}
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </section>
 
@@ -193,6 +212,36 @@ export function GoalsPage() {
           </Button>
         </form>
       </Sheet>
+
+      <Dialog
+        open={deleteId !== null}
+        onClose={() => {
+          setDeleteId(null);
+          setDeleteName("");
+        }}
+        title={`Hapus target "${deleteName}"?`}
+        description="Data kemajuan target ini akan hilang permanen."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setDeleteId(null);
+              setDeleteName("");
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={removeGoal.isPending}
+            onClick={() => void confirmRemove()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
 
       <Sheet open={topupId !== null} onClose={() => setTopupId(null)} title="Nabung">
         <form onSubmit={(e) => void topup(e)} className="space-y-4">

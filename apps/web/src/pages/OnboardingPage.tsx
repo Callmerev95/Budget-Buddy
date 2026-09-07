@@ -62,7 +62,7 @@ export function OnboardingPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-12">
       <div className="mb-8 flex flex-col items-center text-center">
         <span
-          className="mb-4 flex h-16 w-16 items-center justify-center rounded-hero bg-accent text-on-accent"
+          className="mb-4 flex h-16 w-16 items-center justify-center rounded-hero bg-accent-fill text-on-accent-fill"
           aria-hidden="true"
         >
           <Wallet size={28} />

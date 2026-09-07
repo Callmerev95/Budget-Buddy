@@ -1,19 +1,59 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BellRing, TriangleAlert, Wallet } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  BellRing,
+  TrendingDown,
+  TrendingUp,
+  TriangleAlert,
+  Wallet,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useProfile, useSummary, useTransactions } from "../hooks/useFinance";
 import { useOccurrences } from "../hooks/useRecurring";
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
+import { Button } from "../components/ui/Button";
+import { StatCard } from "../components/ui/StatCard";
 import { Money } from "../components/ui/Money";
 import { Progress } from "../components/ui/Progress";
 import { CategoryIcon } from "../components/ui/CategoryIcon";
-import { toCalendarDay } from "../lib/format";
-import { useBudgets, useCategories } from "../hooks/useCatalog";
+import { fadeUp, staggerContainer, staggerItem } from "../lib/motion";
+import { toCalendarDay, formatCompactCurrency } from "../lib/format";
+import { useBudgets, useCategories, useTrend } from "../hooks/useCatalog";
 
 function toneFor(percentage: number): "default" | "warning" | "danger" | "success" {
   if (percentage >= 100) return "danger";
   if (percentage >= 85) return "warning";
   return "default";
+}
+
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
+];
+
+function monthLabel(periodKey: string): string {
+  const [, m] = periodKey.split("-").map(Number);
+  return MONTH_LABELS[(m ?? 1) - 1] ?? periodKey;
 }
 
 export function DashboardPage() {
@@ -24,6 +64,7 @@ export function DashboardPage() {
   const occurrences = useOccurrences(month);
   const budgets = useBudgets(month);
   const categories = useCategories();
+  const trend = useTrend(6);
 
   const recent = useMemo(() => {
     const pages = transactions.data?.pages ?? [];
@@ -65,16 +106,14 @@ export function DashboardPage() {
         title="Gagal memuat data"
         description="Periksa koneksi lalu coba lagi."
         action={
-          <button
-            type="button"
+          <Button
             onClick={() => {
               void profile.refetch();
               void summary.refetch();
             }}
-            className="rounded-control bg-accent px-4 py-2 text-sm font-semibold text-on-accent"
           >
             Coba lagi
-          </button>
+          </Button>
         }
       />
     );
@@ -101,45 +140,158 @@ export function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Ringkasan hari ini</h1>
       </header>
 
+      {/* Statistik bulan ini */}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-3 sm:grid-cols-3"
+      >
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Pemasukan bulan ini"
+            value={<Money amount={s.monthlyIncome} animate />}
+            tone="success"
+            icon={<TrendingUp size={16} aria-hidden="true" />}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Terpakai bulan ini"
+            value={<Money amount={s.spentThisMonth} animate />}
+            tone="danger"
+            icon={<TrendingDown size={16} aria-hidden="true" />}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <StatCard
+            label="Sisa budget"
+            value={<Money amount={s.monthlyBudgetFree} animate />}
+            tone={s.monthlyBudgetFree >= 0 ? "neutral" : "danger"}
+            icon={<Wallet size={16} aria-hidden="true" />}
+            meta={
+              s.monthlyBudgetFree < 0 ? "Sudah melewati batas" : "untuk sisa bulan ini"
+            }
+          />
+        </motion.div>
+      </motion.div>
+
       {/* Hero jatah harian */}
-      <Card className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[13px] font-medium text-muted">Jatah harian</p>
-            <p className="tnum mt-1 text-4xl font-semibold tracking-tight">
-              <Money amount={s.dailyLimit} />
-            </p>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible">
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[13px] font-medium text-muted">Jatah harian</p>
+              <p className="tnum mt-1 text-4xl font-semibold tracking-tight">
+                <Money amount={s.dailyLimit} animate />
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Sisa budget bulan ini{" "}
+                <Money
+                  amount={s.monthlyBudgetFree}
+                  className="font-semibold text-text"
+                  animate
+                />
+              </p>
+            </div>
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-card bg-accent/10 text-accent"
+              aria-hidden="true"
+            >
+              <Wallet size={20} />
+            </span>
+          </div>
+          <div className="mt-4">
+            <Progress
+              value={percentage}
+              label={`Terpakai ${Math.round(Math.min(100, Math.max(0, percentage)))} persen dari jatah harian`}
+              tone={toneFor(percentage)}
+            />
             <p className="mt-2 text-sm text-muted">
-              Sisa budget bulan ini{" "}
-              <Money amount={s.monthlyBudgetFree} className="font-semibold text-text" />
+              Terpakai hari ini{" "}
+              <Money amount={spentToday} className="font-semibold text-text" />
+              {" · "}Sisa <Money amount={remaining} className="font-semibold text-text" />
             </p>
           </div>
-          <span
-            className="flex h-11 w-11 items-center justify-center rounded-card bg-accent/10 text-accent"
-            aria-hidden="true"
+          <Link
+            to="/settings"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
           >
-            <Wallet size={20} />
-          </span>
-        </div>
-        <div className="mt-4">
-          <Progress
-            value={percentage}
-            label={`Terpakai ${Math.round(Math.min(100, Math.max(0, percentage)))} persen dari jatah harian`}
-            tone={toneFor(percentage)}
-          />
-          <p className="mt-2 text-sm text-muted">
-            Terpakai hari ini{" "}
-            <Money amount={spentToday} className="font-semibold text-text" />
-            {" · "}Sisa <Money amount={remaining} className="font-semibold text-text" />
-          </p>
-        </div>
-        <Link
-          to="/settings"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
-        >
-          Atur rencana keuangan <ArrowRight size={14} aria-hidden="true" />
-        </Link>
-      </Card>
+            Atur rencana keuangan <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        </Card>
+      </motion.div>
+
+      {/* Arus kas */}
+      <section>
+        <SectionHeader
+          title="Arus kas"
+          action={
+            <Link to="/reports" className="text-sm font-medium text-accent">
+              Laporan
+            </Link>
+          }
+        />
+        <Card className="p-4">
+          {trend.isLoading ? (
+            <Skeleton className="h-40" />
+          ) : !trend.data || trend.data.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted">Belum ada data.</p>
+          ) : (
+            <div
+              className="h-40"
+              role="img"
+              aria-label="Grafik batang pemasukan vs pengeluaran enam bulan terakhir"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={trend.data.map((p) => ({ ...p, label: monthLabel(p.periodKey) }))}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgb(var(--border))"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: "rgb(var(--muted))" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: "rgb(var(--muted))" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => formatCompactCurrency(v)}
+                    width={56}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgb(var(--surface))",
+                      border: "1px solid rgb(var(--border))",
+                      borderRadius: "14px",
+                      fontSize: "13px",
+                    }}
+                    formatter={(value) => [formatCompactCurrency(Number(value)), ""]}
+                  />
+                  <Bar
+                    dataKey="income"
+                    name="Masuk"
+                    fill="rgb(var(--income))"
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="expense"
+                    name="Keluar"
+                    fill="rgb(var(--expense))"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      </section>
 
       {strained.length > 0 && (
         <Card className="flex items-start gap-3 border-warning/40 p-4" role="status">
@@ -216,26 +368,39 @@ export function DashboardPage() {
             description="Catat pengeluaran pertamamu dengan tombol +."
           />
         ) : (
-          <Card className="divide-y divide-border">
-            {recent.map((txn) => {
-              const meta = categoryByName.get(txn.category);
-              return (
-                <div key={txn.id} className="flex items-center gap-3 p-4">
-                  <CategoryIcon
-                    icon={meta?.icon ?? "shapes"}
-                    color={meta?.color ?? "#6b7280"}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium">{txn.description}</p>
-                    <p className="text-[13px] text-muted">{txn.category}</p>
-                  </div>
-                  <Money
-                    amount={txn.amount}
-                    className="text-[15px] font-semibold text-expense"
-                  />
-                </div>
-              );
-            })}
+          <Card className="overflow-hidden">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="divide-y divide-border"
+            >
+              {recent.map((txn) => {
+                const meta = categoryByName.get(txn.category);
+                return (
+                  <motion.div
+                    key={txn.id}
+                    variants={staggerItem}
+                    className="flex items-center gap-3 p-4"
+                  >
+                    <CategoryIcon
+                      icon={meta?.icon ?? "shapes"}
+                      color={meta?.color ?? "#6b7280"}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-medium">
+                        {txn.description}
+                      </p>
+                      <p className="text-[13px] text-muted">{txn.category}</p>
+                    </div>
+                    <Money
+                      amount={txn.amount}
+                      className="text-[15px] font-semibold text-expense"
+                    />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </Card>
         )}
       </section>

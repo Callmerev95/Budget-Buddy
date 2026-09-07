@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Landmark, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useAccounts, useAddAccount, useDeleteAccount } from "../hooks/useCatalog";
@@ -7,9 +8,11 @@ import { useAddRule, useDeleteRule, useRules, useTransfer } from "../hooks/useFi
 import { Card, EmptyState, SectionHeader, Skeleton } from "../components/ui/Primitives";
 import { Money } from "../components/ui/Money";
 import { Sheet } from "../components/ui/Sheet";
+import { Dialog } from "../components/ui/Dialog";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AmountInput } from "../components/ui/AmountInput";
+import { staggerContainer, staggerItem } from "../lib/motion";
 import { toErrorMessage } from "../lib/api";
 import { toCalendarDay } from "../lib/format";
 
@@ -43,6 +46,14 @@ export function AccountsPage() {
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
   const [transferAmount, setTransferAmount] = useState(0);
+  const [deleteAccountTarget, setDeleteAccountTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [deleteRuleTarget, setDeleteRuleTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const pending = (occurrences.data ?? []).filter((o) => o.status === "PENDING");
 
@@ -96,13 +107,15 @@ export function AccountsPage() {
     }
   };
 
-  const removeAccount = async (id: string, accountName: string) => {
-    if (!window.confirm(`Hapus akun "${accountName}"?`)) return;
+  const confirmRemoveAccount = async () => {
+    if (!deleteAccountTarget) return;
     try {
-      await deleteAccount.mutateAsync(id);
+      await deleteAccount.mutateAsync(deleteAccountTarget.id);
       toast.success("Akun dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus akun."));
+    } finally {
+      setDeleteAccountTarget(null);
     }
   };
 
@@ -137,13 +150,15 @@ export function AccountsPage() {
     }
   };
 
-  const removeRule = async (id: string, ruleName: string) => {
-    if (!window.confirm(`Hapus tagihan "${ruleName}"?`)) return;
+  const confirmRemoveRule = async () => {
+    if (!deleteRuleTarget) return;
     try {
-      await deleteRule.mutateAsync(id);
+      await deleteRule.mutateAsync(deleteRuleTarget.id);
       toast.success("Tagihan dihapus.");
     } catch (err) {
       toast.error(toErrorMessage(err, "Gagal menghapus tagihan."));
+    } finally {
+      setDeleteRuleTarget(null);
     }
   };
 
@@ -177,36 +192,45 @@ export function AccountsPage() {
             description="Buat akun pertamamu untuk mulai mencatat."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-3 sm:grid-cols-2"
+          >
             {accounts.data.map((acc) => (
-              <Card key={acc.id} className="flex items-center gap-3 p-4">
-                <span
-                  className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
-                  aria-hidden="true"
-                >
-                  {acc.type === "CASH" ? <Wallet size={18} /> : <Landmark size={18} />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold">{acc.name}</p>
-                  <p className="text-[13px] text-muted">
-                    {acc.type === "CASH"
-                      ? "Tunai"
-                      : acc.type === "BANK"
-                        ? "Bank"
-                        : "E-wallet"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void removeAccount(acc.id, acc.name)}
-                  aria-label={`Hapus akun ${acc.name}`}
-                  className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
-                >
-                  <Trash2 size={16} aria-hidden="true" />
-                </button>
-              </Card>
+              <motion.div key={acc.id} variants={staggerItem}>
+                <Card className="flex items-center gap-3 p-4">
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-control bg-accent/10 text-accent"
+                    aria-hidden="true"
+                  >
+                    {acc.type === "CASH" ? <Wallet size={18} /> : <Landmark size={18} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold">{acc.name}</p>
+                    <p className="text-[13px] text-muted">
+                      {acc.type === "CASH"
+                        ? "Tunai"
+                        : acc.type === "BANK"
+                          ? "Bank"
+                          : "E-wallet"}{" "}
+                      · <span aria-hidden="true">saldo</span>{" "}
+                      <Money amount={acc.balance} className="tnum" />
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteAccountTarget({ id: acc.id, name: acc.name })}
+                    aria-label={`Hapus akun ${acc.name}`}
+                    className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </section>
 
@@ -276,7 +300,7 @@ export function AccountsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => void removeRule(rule.id, rule.name)}
+                  onClick={() => setDeleteRuleTarget({ id: rule.id, name: rule.name })}
                   aria-label={`Hapus tagihan ${rule.name}`}
                   className="rounded-control p-2 text-muted hover:bg-expense/10 hover:text-expense"
                 >
@@ -416,6 +440,48 @@ export function AccountsPage() {
           </Button>
         </form>
       </Sheet>
+
+      <Dialog
+        open={deleteAccountTarget !== null}
+        onClose={() => setDeleteAccountTarget(null)}
+        title={`Hapus akun "${deleteAccountTarget?.name ?? ""}"?`}
+        description="Saldo dan riwayat akun ini akan dihapus. Transaksi di akun lain tetap utuh."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setDeleteAccountTarget(null)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={deleteAccount.isPending}
+            onClick={() => void confirmRemoveAccount()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={deleteRuleTarget !== null}
+        onClose={() => setDeleteRuleTarget(null)}
+        title={`Hapus tagihan "${deleteRuleTarget?.name ?? ""}"?`}
+        description="Aturan tagihan rutin ini akan dihapus. Tagihan bulan ini ikut hilang."
+        destructive
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setDeleteRuleTarget(null)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            loading={deleteRule.isPending}
+            onClick={() => void confirmRemoveRule()}
+          >
+            Hapus
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }
