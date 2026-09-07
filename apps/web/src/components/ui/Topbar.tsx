@@ -6,6 +6,7 @@ import { useUnreadCount } from "../../hooks/useNotifications";
 import { useTheme } from "../../theme/theme-context";
 import { SearchInput } from "./SearchInput";
 import { Avatar } from "./Avatar";
+import { PopBadge } from "./PopBadge";
 
 /** Topbar desktop khas Fundex: pencarian, toggle tema, lonceng, avatar. */
 export function Topbar() {
@@ -55,12 +56,9 @@ export function Topbar() {
         >
           <Bell size={19} aria-hidden="true" />
           {unreadCount > 0 && (
-            <span
-              aria-hidden="true"
-              className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-expense px-0.5 text-[9px] font-bold text-white"
-            >
+            <PopBadge className="absolute right-1 top-1 h-3.5 min-w-3.5 bg-expense px-0.5 text-[9px] font-bold text-white">
               {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+            </PopBadge>
           )}
         </button>
         <button

@@ -1,3 +1,5 @@
+import { motion, useReducedMotion } from "framer-motion";
+
 interface ProgressProps {
   value: number;
   label: string;
@@ -13,6 +15,7 @@ const TONES: Record<NonNullable<ProgressProps["tone"]>, string> = {
 
 /** Progress bar yang terbaca screen reader (bukan div biasa). */
 export function Progress({ value, label, tone = "default" }: ProgressProps) {
+  const reduce = useReducedMotion();
   const clamped = Math.min(100, Math.max(0, value));
 
   return (
@@ -24,9 +27,13 @@ export function Progress({ value, label, tone = "default" }: ProgressProps) {
       aria-valuemax={100}
       className="h-2 w-full overflow-hidden rounded-full bg-border/60"
     >
-      <div
-        className={`h-full rounded-full transition-[width] duration-300 ${TONES[tone]}`}
-        style={{ width: `${clamped}%` }}
+      <motion.div
+        initial={false}
+        animate={{ width: `${clamped}%` }}
+        transition={
+          reduce ? { duration: 0 } : { type: "spring", stiffness: 110, damping: 22 }
+        }
+        className={`h-full rounded-full ${TONES[tone]}`}
       />
     </div>
   );
