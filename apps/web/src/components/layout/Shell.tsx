@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, useOutlet } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeftRight,
   Bell,
@@ -17,8 +18,10 @@ import { toast } from "sonner";
 import { useProfile } from "../../hooks/useFinance";
 import { useUnreadCount } from "../../hooks/useNotifications";
 import { supabase } from "../../lib/supabase";
+import { pageTransition, spring } from "../../lib/motion";
 import { Avatar } from "../ui/Avatar";
 import { Topbar } from "../ui/Topbar";
+import { PopBadge } from "../ui/PopBadge";
 
 const NAV = [
   { to: "/dashboard", label: "Beranda", icon: Home },
@@ -35,22 +38,35 @@ const SECONDARY_NAV = [
 ] as const;
 
 function navClass({ isActive }: { isActive: boolean }): string {
-  return `flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium transition-colors ${
-    isActive
-      ? "bg-accent/10 text-accent"
-      : "text-muted hover:bg-surface-2 hover:text-text"
+  return `relative flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium transition-colors ${
+    isActive ? "text-accent" : "text-muted hover:bg-surface-2 hover:text-text"
   }`;
+}
+
+/** Pill aktif yang meluncur antar item nav (shared layout animation). */
+function NavIndicator({
+  layoutId,
+  className = "inset-0 rounded-control bg-accent/10",
+}: {
+  layoutId: string;
+  className?: string;
+}) {
+  return (
+    <motion.span
+      layoutId={layoutId}
+      transition={spring}
+      aria-hidden="true"
+      className={`pointer-events-none absolute ${className}`}
+    />
+  );
 }
 
 function UnreadBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span
-      aria-hidden="true"
-      className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent/15 px-1 text-[11px] font-bold text-accent"
-    >
+    <PopBadge className="ml-auto h-5 min-w-5 bg-accent/15 px-1 text-[11px] font-bold text-accent">
       {count > 99 ? "99+" : count}
-    </span>
+    </PopBadge>
   );
 }
 
@@ -59,8 +75,15 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
     <>
       {NAV.map(({ to, label, icon: Icon }) => (
         <NavLink key={to} to={to} onClick={onNavigate} className={navClass}>
-          <Icon size={18} aria-hidden="true" />
-          {label}
+          {({ isActive }) => (
+            <>
+              {isActive && <NavIndicator layoutId="sidebar-active" />}
+              <span className="relative flex items-center gap-3">
+                <Icon size={18} aria-hidden="true" />
+                {label}
+              </span>
+            </>
+          )}
         </NavLink>
       ))}
     </>
@@ -114,7 +137,12 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         <nav aria-label="Navigasi tambahan" className="flex flex-col gap-1">
           {SECONDARY_NAV.map(({ to, label }) => (
             <NavLink key={to} to={to} onClick={onNavigate} className={navClass}>
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive && <NavIndicator layoutId="sidebar-active" />}
+                  <span className="relative">{label}</span>
+                </>
+              )}
             </NavLink>
           ))}
           <NotificationNavItem onNavigate={onNavigate} />
@@ -158,9 +186,16 @@ function NotificationNavItem({ onNavigate }: { onNavigate?: () => void }) {
       }
       className={navClass}
     >
-      <Bell size={18} aria-hidden="true" />
-      Notifikasi
-      <UnreadBadge count={unreadCount} />
+      {({ isActive }) => (
+        <>
+          {isActive && <NavIndicator layoutId="sidebar-active" />}
+          <span className="relative flex min-w-0 items-center gap-3">
+            <Bell size={18} aria-hidden="true" />
+            Notifikasi
+            <UnreadBadge count={unreadCount} />
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }
@@ -179,14 +214,30 @@ function MobileBellButton() {
     >
       <Bell size={20} aria-hidden="true" />
       {unreadCount > 0 && (
-        <span
-          aria-hidden="true"
-          className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/15 px-0.5 text-[10px] font-bold text-accent"
-        >
+        <PopBadge className="absolute right-0.5 top-0.5 h-4 min-w-4 bg-accent/15 px-0.5 text-[10px] font-bold text-accent">
           {unreadCount > 99 ? "99+" : unreadCount}
-        </span>
+        </PopBadge>
       )}
     </button>
+  );
+}
+
+/** Transisi halus antar halaman: fade + slide tipis. */
+function AnimatedOutlet() {
+  const location = useLocation();
+  const outlet = useOutlet();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        variants={pageTransition}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        {outlet}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -277,7 +328,7 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
 
         {/* Konten */}
         <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-6 lg:px-8 lg:pb-20">
-          <Outlet />
+          <AnimatedOutlet />
         </main>
       </div>
 
@@ -293,27 +344,42 @@ export function Shell({ onAdd }: { onAdd: () => void }) {
               to={to}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                `relative flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
                   isActive ? "text-accent" : "text-muted"
                 }`
               }
             >
-              <Icon size={20} aria-hidden="true" />
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <NavIndicator
+                      layoutId="bottom-active"
+                      className="inset-x-1.5 inset-y-1 rounded-full bg-accent/10"
+                    />
+                  )}
+                  <span className="relative flex flex-col items-center gap-1">
+                    <Icon size={20} aria-hidden="true" />
+                    {label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </div>
       </nav>
 
       {/* Tombol tambah mengambang */}
-      <button
+      <motion.button
         type="button"
         onClick={onAdd}
         aria-label="Tambah transaksi"
-        className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-fill text-on-accent-fill shadow-pop transition-transform active:scale-95 lg:bottom-8 lg:right-8"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.92 }}
+        transition={spring}
+        className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-fill text-on-accent-fill shadow-pop lg:bottom-8 lg:right-8"
       >
         <Plus size={24} aria-hidden="true" />
-      </button>
+      </motion.button>
     </div>
   );
 }
