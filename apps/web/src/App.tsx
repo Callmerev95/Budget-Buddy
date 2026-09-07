@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { queryClient } from "./lib/query";
 import ProtectedRoute from "./lib/ProtectedRoute";
@@ -54,32 +55,34 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Toaster position="bottom-center" closeButton theme="system" />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <MotionConfig reducedMotion="user">
+          <Toaster position="bottom-center" closeButton theme="system" />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route element={<AuthenticatedApp />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/transactions" element={<TransactionsPage />} />
-                <Route path="/budgets" element={<BudgetsPage />} />
-                <Route path="/accounts" element={<AccountsPage />} />
-                <Route path="/goals" element={<GoalsPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route element={<AuthenticatedApp />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/transactions" element={<TransactionsPage />} />
+                  <Route path="/budgets" element={<BudgetsPage />} />
+                  <Route path="/accounts" element={<AccountsPage />} />
+                  <Route path="/goals" element={<GoalsPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
               </Route>
-            </Route>
 
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </MotionConfig>
       </ThemeProvider>
     </QueryClientProvider>
   );
