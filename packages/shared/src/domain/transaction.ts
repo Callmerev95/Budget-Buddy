@@ -40,6 +40,7 @@ export const UserProfileSchema = z.object({
 export const MonthlySummarySchema = z.object({
   dailyLimit: z.number(),
   monthlyIncome: z.number(),
+  incomeThisMonth: z.number(),
   spentThisMonth: z.number(),
   transactionCount: z.number(),
   totalFixed: z.number(),

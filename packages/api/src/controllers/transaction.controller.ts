@@ -147,11 +147,15 @@ export async function getMonthlySummary(req: Request, res: Response): Promise<vo
   const userId = getProfileId(req);
   const monthStart = startOfMonthUtc(new Date());
 
-  const [monthly, recurringRules, user] = await Promise.all([
+  const [monthly, incomeAggregate, recurringRules, user] = await Promise.all([
     prisma.transaction.aggregate({
       where: { userId, type: "EXPENSE", occurredAt: { gte: monthStart } },
       _sum: { amount: true },
       _count: true,
+    }),
+    prisma.transaction.aggregate({
+      where: { userId, type: "INCOME", occurredAt: { gte: monthStart } },
+      _sum: { amount: true },
     }),
     prisma.recurringRule.findMany({
       where: { userId, isActive: true },
@@ -172,6 +176,7 @@ export async function getMonthlySummary(req: Request, res: Response): Promise<vo
     throw new NotFoundError("Profil pengguna tidak ditemukan.");
   }
 
+  const incomeThisMonth = incomeAggregate._sum.amount ?? 0;
   const spentThisMonth = monthly._sum.amount ?? 0;
   const totalFixed = recurringRules.reduce((sum, rule) => sum + rule.amount, 0);
   const savings = user.isPercentTarget
@@ -181,6 +186,7 @@ export async function getMonthlySummary(req: Request, res: Response): Promise<vo
   res.status(200).json({
     dailyLimit: user.dailyLimit,
     monthlyIncome: user.monthlyIncome,
+    incomeThisMonth,
     spentThisMonth,
     transactionCount: monthly._count,
     totalFixed,

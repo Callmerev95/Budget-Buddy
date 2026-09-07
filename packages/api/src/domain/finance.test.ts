@@ -3,6 +3,7 @@ import {
   calculateDailyAllowance,
   effectiveDueDate,
   resolveSavingsAmount,
+  signedFlowAmount,
 } from "./finance.js";
 
 const marchTenth = new Date("2026-03-10T05:00:00.000Z");
@@ -100,5 +101,23 @@ describe("effectiveDueDate", () => {
 
   it("tidak mengubah tanggal 31 pada bulan 31 hari", () => {
     expect(effectiveDueDate(31, 2026, 12)).toBe(31);
+  });
+});
+
+describe("signedFlowAmount", () => {
+  it("mengubah pengeluaran menjadi negatif", () => {
+    expect(signedFlowAmount("EXPENSE", 50_000)).toBe(-50_000);
+  });
+
+  it("meneruskan pemasukan apa adanya", () => {
+    expect(signedFlowAmount("INCOME", 150_000)).toBe(150_000);
+  });
+
+  it("meneruskan baris transfer keluar (sudah negatif)", () => {
+    expect(signedFlowAmount("TRANSFER", -50_000)).toBe(-50_000);
+  });
+
+  it("meneruskan baris transfer masuk (positif)", () => {
+    expect(signedFlowAmount("TRANSFER", 50_000)).toBe(50_000);
   });
 });

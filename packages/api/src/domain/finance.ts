@@ -1,5 +1,18 @@
 import { daysInMonth, remainingDaysInMonth } from "../lib/calendar.js";
 
+export type FlowType = "INCOME" | "EXPENSE" | "TRANSFER";
+
+/**
+ * Tanda aritmetika saldo untuk satu baris mutasi.
+ *
+ * Pengeluaran disimpan positif di database; tanda negatif diterapkan di sini
+ * saat menjumlahkan saldo. Baris transfer keluar/masuk sudah ditandai oleh
+ * penyimpanannya (negatif untuk keluar, positif untuk masuk).
+ */
+export function signedFlowAmount(type: FlowType, amount: number): number {
+  return type === "EXPENSE" ? -amount : amount;
+}
+
 /**
  * Logika keuangan murni: tanpa akses database maupun environment.
  *
